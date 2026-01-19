@@ -1,17 +1,17 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.1.1
+# Version: 0.1.2
 #
 # PURE PACKAGE FILE
 # - Safe for `packages:` inclusion
-# - Adds required SPI bus for ili9xxx
-# - No esphome / wifi / api / ota / logger blocks
+# - Includes required SPI + ili9xxx pins for ESP32-S3-Box-3
+# - NO esphome / wifi / api / ota / logger blocks
 
 substitutions:
   idle_color: 0xA7D8FF
   thermostat_entity: climate.ecobee_thermostat
 
 # -----------------
-# SPI bus (REQUIRED for ili9xxx)
+# SPI bus (REQUIRED)
 # -----------------
 spi:
   clk_pin: GPIO7
@@ -95,12 +95,17 @@ font:
     size: 28
 
 # -----------------
-# Display
+# Display (ESP32-S3-Box-3)
 # -----------------
 display:
   - platform: ili9xxx
     model: S3BOX
     id: box_display
+    cs_pin: GPIO5
+    dc_pin: GPIO4
+    reset_pin:
+      number: GPIO48
+      inverted: true
     update_interval: never
     lambda: |-
       const Color paper = Color(0xF3, 0xF1, 0xE7);
@@ -142,4 +147,3 @@ script:
   - id: request_draw
     then:
       - component.update: box_display
-
