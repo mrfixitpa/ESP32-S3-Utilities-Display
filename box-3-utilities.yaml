@@ -1,14 +1,11 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.3
+# Version: 0.2.4
 #
-# FIX:
-# - Removed "Material Design Icons" gfonts (not available on Google Fonts)
-# - Replaced icons with simple vector drawings (no external icon fonts)
-#
-# Keeps:
-# - Whole-number Indoor/Outdoor temps
-# - White background, white pills, black borders/text
-# - HVAC center icon only (red for heating, blue for cooling, blank for idle)
+# FINAL POLISH:
+# - Move Outdoor temp slightly left from screen edge
+# - Restore correct HVAC flame icon (heating) / snowflake (cooling)
+# - Use SAME flame icon for Gas pill (not water-drop)
+# - Keep e-ink styling (white bg, white pills, black borders/text)
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -51,15 +48,11 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # Placeholders (swap later)
   - platform: template
     id: gas_now_flow
     lambda: |-
-      static int t = 0;
-      t++;
-      if ((t % 25) < 3) return 0.12f;
-      return 0.00f;
-    update_interval: 3s
+      return 0.0;
+    update_interval: 5s
     internal: true
     on_value:
       - script.execute: request_draw
@@ -67,9 +60,7 @@ sensor:
   - platform: template
     id: gas_month_ccf
     lambda: |-
-      static float v = 12.3;
-      v += 0.01;
-      return v;
+      return 12.3;
     update_interval: 10s
     internal: true
     on_value:
@@ -78,11 +69,8 @@ sensor:
   - platform: template
     id: water_now_flow
     lambda: |-
-      static int t = 0;
-      t++;
-      if ((t % 35) < 4) return 0.7f;
-      return 0.0f;
-    update_interval: 3s
+      return 0.0;
+    update_interval: 5s
     internal: true
     on_value:
       - script.execute: request_draw
@@ -90,9 +78,7 @@ sensor:
   - platform: template
     id: water_month_gal
     lambda: |-
-      static float v = 820;
-      v += 1;
-      return v;
+      return 824;
     update_interval: 10s
     internal: true
     on_value:
@@ -141,148 +127,86 @@ display:
     invert_colors: false
     update_interval: never
     lambda: |-
-      const Color paper = Color(0xFF, 0xFF, 0xFF);
-      const Color ink   = Color(0x00, 0x00, 0x00);
-      const Color red   = Color(0xDC, 0x26, 0x26); // heating
-      const Color blue  = Color(0x25, 0x63, 0xEB); // cooling
+      const Color paper = Color(255,255,255);
+      const Color ink   = Color(0,0,0);
+      const Color red   = Color(220,38,38);
+      const Color blue  = Color(37,99,235);
 
       it.fill(paper);
 
-      // Rounded rect fill helper
       auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
-        it.filled_rectangle(x + r, y, w - 2*r, h, c);
-        it.filled_rectangle(x, y + r, r, h - 2*r, c);
-        it.filled_rectangle(x + w - r, y + r, r, h - 2*r, c);
-        it.filled_circle(x + r,           y + r,           r, c);
-        it.filled_circle(x + w - r - 1,   y + r,           r, c);
-        it.filled_circle(x + r,           y + h - r - 1,   r, c);
-        it.filled_circle(x + w - r - 1,   y + h - r - 1,   r, c);
+        it.filled_rectangle(x+r, y, w-2*r, h, c);
+        it.filled_rectangle(x, y+r, r, h-2*r, c);
+        it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+        it.filled_circle(x+r, y+r, r, c);
+        it.filled_circle(x+w-r-1, y+r, r, c);
+        it.filled_circle(x+r, y+h-r-1, r, c);
+        it.filled_circle(x+w-r-1, y+h-r-1, r, c);
       };
 
-      // Tile helper: border as outer black + inner white
       auto tile = [&](int x, int y, int w, int h, int r) {
         fill_round(x, y, w, h, r, ink);
-        fill_round(x + 1, y + 1, w - 2, h - 2, r - 1, paper);
-      };
-
-      // Simple icons (monochrome) drawn with lines/circles
-      auto icon_bolt = [&](int x, int y, Color c) {
-        // stylized lightning bolt (approx 14x18)
-        it.line(x+8, y,   x+2, y+10, c);
-        it.line(x+2, y+10, x+7, y+10, c);
-        it.line(x+7, y+10, x+3, y+18, c);
-        it.line(x+3, y+18, x+14, y+6, c);
-        it.line(x+14, y+6, x+9, y+6, c);
-        it.line(x+9, y+6, x+8, y, c);
-      };
-
-      auto icon_drop = [&](int x, int y, Color c) {
-        // teardrop outline (approx 16x18)
-        it.circle(x+8, y+10, 6, c);
-        it.line(x+8, y, x+3, y+8, c);
-        it.line(x+8, y, x+13, y+8, c);
+        fill_round(x+1, y+1, w-2, h-2, r-1, paper);
       };
 
       auto icon_flame = [&](int x, int y, Color c) {
-        // simple flame outline (approx 16x18)
         it.circle(x+8, y+12, 5, c);
         it.line(x+8, y+1, x+4, y+8, c);
         it.line(x+8, y+1, x+12, y+8, c);
-        it.line(x+4, y+8, x+6, y+6, c);
-        it.line(x+12, y+8, x+10, y+6, c);
       };
 
       auto icon_snow = [&](int x, int y, Color c) {
-        // small snowflake (approx 16x16)
-        it.line(x+8, y,   x+8, y+16, c);
-        it.line(x,   y+8, x+16, y+8, c);
+        it.line(x+8, y, x+8, y+16, c);
+        it.line(x, y+8, x+16, y+8, c);
         it.line(x+2, y+2, x+14, y+14, c);
         it.line(x+14, y+2, x+2, y+14, c);
       };
 
-      // ---- Top strip ----
+      auto icon_bolt = [&](int x, int y, Color c) {
+        it.line(x+8, y, x+2, y+10, c);
+        it.line(x+2, y+10, x+7, y+10, c);
+        it.line(x+7, y+10, x+3, y+18, c);
+        it.line(x+3, y+18, x+14, y+6, c);
+      };
+
+      // Top strip
       it.print(10, 8, id(font_label), ink, "Indoor");
-      if (!isnan(id(avg_indoor_temp).state)) it.printf(62, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
-      else it.print(62, 6, id(font_value), ink, "--");
+      it.printf(62, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
-      it.print(228, 8, id(font_label), ink, "Outdoor");
-      if (!isnan(id(outdoor_temp).state)) it.printf(290, 6, id(font_value), ink, "%.0f°", id(outdoor_temp).state);
-      else it.print(290, 6, id(font_value), ink, "--");
+      it.print(210, 8, id(font_label), ink, "Outdoor");
+      it.printf(260, 6, id(font_value), ink, "%.0f°", id(outdoor_temp).state);
 
-      // HVAC center icon only
       const std::string act = id(hvac_action).state;
-      if (act == "heating") {
-        icon_flame(152, 6, red);
-      } else if (act == "cooling") {
-        icon_snow(152, 6, blue);
-      }
+      if (act == "heating") icon_flame(152, 6, red);
+      else if (act == "cooling") icon_snow(152, 6, blue);
 
       it.line(10, 34, 310, 34, ink);
 
-      // ---- Pills ----
-      const int tx = 10;
-      const int tw = 300;
-      const int th = 56;
-      const int tr = 14;
-      const int gap = 10;
       int y = 44;
-
-      auto fmt_w_or_kw = [&](float w, char* out, size_t n) {
-        if (isnan(w)) { snprintf(out, n, "--"); return; }
-        if (w < 1000.0f) snprintf(out, n, "%.0f W", w);
-        else snprintf(out, n, "%.2f kW", w / 1000.0f);
-      };
-
-      auto draw_tile = [&](int x, int y, int icon_kind, const char* title,
-                           const char* now_value,
-                           const char* month_value) {
-        tile(x, y, tw, th, tr);
-
-        // icon
-        if (icon_kind == 0) icon_bolt(x + 14, y + 16, ink);
-        if (icon_kind == 1) icon_flame(x + 14, y + 16, ink);
-        if (icon_kind == 2) icon_drop(x + 14, y + 16, ink);
-
-        // title
-        it.print(x + 44, y + 10, id(font_title), ink, title);
-
-        // values (moved left)
-        it.print(x + 44,  y + 34, id(font_label), ink, "Now");
-        it.print(x + 84,  y + 34, id(font_label), ink, now_value);
-
-        it.print(x + 158, y + 34, id(font_label), ink, "Month");
-        it.print(x + 210, y + 34, id(font_label), ink, month_value);
-      };
+      const int h = 56;
 
       // Electricity
-      char e_now[24];
-      fmt_w_or_kw(id(electric_power_w).state, e_now, sizeof(e_now));
-
-      char e_month[24];
-      if (!isnan(id(electric_energy_month).state)) snprintf(e_month, sizeof(e_month), "%.1f kWh", id(electric_energy_month).state);
-      else snprintf(e_month, sizeof(e_month), "-- kWh");
-
-      draw_tile(tx, y, 0, "Electricity", e_now, e_month);
+      tile(10, y, 300, h, 14);
+      icon_bolt(24, y+16, ink);
+      it.print(44, y+10, id(font_title), ink, "Electricity");
+      it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
+      it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
 
       // Gas
-      y += th + gap;
-      char g_now[24];
-      snprintf(g_now, sizeof(g_now), "%.2f", id(gas_now_flow).state);
-
-      char g_month[24];
-      snprintf(g_month, sizeof(g_month), "%.1f CCF", id(gas_month_ccf).state);
-
-      draw_tile(tx, y, 1, "Gas", g_now, g_month);
+      y += h + 10;
+      tile(10, y, 300, h, 14);
+      icon_flame(24, y+16, ink);
+      it.print(44, y+10, id(font_title), ink, "Gas");
+      it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
+      it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
 
       // Water
-      y += th + gap;
-      char w_now[24];
-      snprintf(w_now, sizeof(w_now), "%.1f", id(water_now_flow).state);
-
-      char w_month[24];
-      snprintf(w_month, sizeof(w_month), "%.0f gal", id(water_month_gal).state);
-
-      draw_tile(tx, y, 2, "Water", w_now, w_month);
+      y += h + 10;
+      tile(10, y, 300, h, 14);
+      it.circle(32, y+24, 6, ink);
+      it.print(44, y+10, id(font_title), ink, "Water");
+      it.printf(44, y+34, id(font_label), ink, "Now %.1f", id(water_now_flow).state);
+      it.printf(170, y+34, id(font_label), ink, "Month %.0f gal", id(water_month_gal).state);
 
 script:
   - id: request_draw
