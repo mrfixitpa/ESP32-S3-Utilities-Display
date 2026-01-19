@@ -1,0 +1,127 @@
+# Box-3 Utilities Display (ESPHome Package)
+# Version: 0.1.0
+#
+# NOTE:
+# - This file is a PURE ESPHome PACKAGE.
+# - It intentionally contains NO esphome:, wifi:, api:, ota:, logger:, or esp32: blocks.
+# - It is safe to include via `packages:`.
+# - HVAC strip logic is preserved conceptually and kept at the top of the display.
+# - Utilities section below uses placeholders for gas/water.
+
+substitutions:
+  idle_color: 0xA7D8FF
+  thermostat_entity: climate.ecobee_thermostat
+
+sensor:
+  - platform: homeassistant
+    id: indoor_temperature
+    entity_id: sensor.ecobee_temperature
+    internal: true
+
+  - platform: homeassistant
+    id: outdoor_temperature
+    entity_id: sensor.ecobee_outdoor_temperature
+    internal: true
+
+  - platform: homeassistant
+    id: hvac_action
+    entity_id: sensor.ecobee_hvac_action
+    internal: true
+
+  - platform: homeassistant
+    id: electric_power_w
+    entity_id: sensor.house_electric_meter_power_minute_average
+    internal: true
+
+  - platform: homeassistant
+    id: electric_energy_today
+    entity_id: sensor.house_electric_meter_energy_today
+    internal: true
+
+  - platform: homeassistant
+    id: electric_energy_month
+    entity_id: sensor.house_electric_meter_energy_this_month
+    internal: true
+
+  - platform: template
+    id: gas_month_ccf
+    lambda: |-
+      static float v = 12.3;
+      v += 0.01;
+      return v;
+    update_interval: 10s
+    internal: true
+
+  - platform: template
+    id: water_month_gal
+    lambda: |-
+      static float v = 820;
+      v += 1;
+      return v;
+    update_interval: 10s
+    internal: true
+
+font:
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 600
+    id: font_title
+    size: 26
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 500
+    id: font_label
+    size: 18
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_value
+    size: 28
+
+display:
+  - platform: ili9xxx
+    model: S3BOX
+    id: box_display
+    update_interval: never
+    lambda: |-
+      const Color paper = Color(0xF3, 0xF1, 0xE7);
+      const Color ink   = Color(0x11, 0x11, 0x11);
+      const Color div   = Color(0xC9, 0xC6, 0xBB);
+
+      it.fill(paper);
+
+      it.print(10, 6, id(font_label), ink, "Indoor");
+      it.printf(10, 26, id(font_value), ink, "%.1f°", id(indoor_temperature).state);
+
+      it.print(120, 6, id(font_label), ink, "Outdoor");
+      it.printf(120, 26, id(font_value), ink, "%.1f°", id(outdoor_temperature).state);
+
+      it.print(240, 6, id(font_label), ink, "HVAC");
+      it.printf(240, 26, id(font_label), ink, "%s", id(hvac_action).state.c_str());
+
+      it.line(10, 60, 310, 60, div);
+
+      it.print(10, 70, id(font_title), ink, "UTILITIES");
+
+      it.print(10, 110, id(font_label), ink, "Electric");
+      it.printf(10, 132, id(font_label), ink, "Now: %.0f W", id(electric_power_w).state);
+      it.printf(10, 152, id(font_label), ink, "Today: %.2f kWh", id(electric_energy_today).state);
+      it.printf(10, 172, id(font_label), ink, "Month: %.1f kWh", id(electric_energy_month).state);
+
+      it.line(10, 198, 310, 198, div);
+
+      it.print(10, 208, id(font_label), ink, "Gas Month");
+      it.printf(150, 208, id(font_label), ink, "%.1f CCF", id(gas_month_ccf).state);
+
+      it.print(10, 228, id(font_label), ink, "Water Month");
+      it.printf(150, 228, id(font_label), ink, "%.0f gal", id(water_month_gal).state);
+
+script:
+  - id: request_draw
+    then:
+      - component.update: box_display
