@@ -1,87 +1,58 @@
-# ESP32-S3-Box-3 Utilities Display
+# ESP32-S3 Utilities Display
 
-A dedicated **Home Assistant companion display** for real-time and monthly household utility usage, built on **ESPHome** for the **ESP32-S3-Box-3**.
+This repository contains an ESPHome package for the **ESP32-S3-Box-3** that implements a clean, black-and-white utilities dashboard (Electricity, Gas, Water).
 
-This project replaces the voice assistant features of the Box-3 with a clean, **e-ink-inspired dashboard** designed for at-a-glance readability. It currently displays live and aggregated **electricity usage** from Home Assistant (Emporia) and is structured to easily add **gas and water meters** as they come online.
+## Overview
 
----
+The display shows:
 
-## ✨ Features
+### Top Row
+- Indoor temperature (left)
+- Outdoor temperature (right)
+- HVAC state icon in the center  
+  - 🔥 Heating  
+  - ❄ Cooling  
+  - Blank when idle
 
-- ESP32-S3-Box-3 touch display (no voice assistant)
-- E-ink / paper-style UI (grayscale, high contrast, minimal design)
-- Live electric power usage (W / kW)
-- Daily and monthly electric energy totals (kWh)
-- Gas and water sections (placeholder / demo data)
-- Touch input support for future interactions
-- Native ESPHome + Home Assistant integration
+### Main Area
+- Electricity (Now / Month)
+- Gas (Now / Month)
+- Water (Now / Month)
 
----
+The UI is intentionally minimal and high-contrast, optimized for e‑ink–style readability.
 
-## 📷 Screenshots
+## Hardware
+- ESP32-S3-Box-3
+- Built-in ILI9XXX display
 
-> Coming soon  
-> (Add screenshots here once the layout is finalized)
+## Software
+- ESPHome 2025.x+
+- Arduino framework
+- Home Assistant (sensor source)
 
----
+## Fonts
 
-## 🧰 Hardware
+- **Text:** Google Fonts – Figtree
+- **Icons:** Material Design Icons (MDI webfont)
 
-- **ESP32-S3-Box-3**
-- Built-in:
-  - 320×240 LCD
-  - Capacitive touch (GT911)
-  - Backlight control
+> Icons are rendered from the MDI font TTF.  
+> Text (including the degree symbol °) is rendered from standard Google Fonts.
 
-No additional hardware is required for the display itself.
+## Icons Used
 
----
+| Purpose | Icon | Codepoint |
+|------|------|----------|
+| Electricity | Flash | F140C |
+| Gas / Heating | Flame | F0238 |
+| Water | Water Drop | F0E0A |
+| Cooling | Snowflake | F0717 |
 
-## 🏠 Home Assistant Requirements
+## Design Goals
+- Black & white only
+- High contrast
+- Readable at a distance
+- Pixel-precise layout
+- No voice or touch dependencies
 
-### Electric (Emporia)
-- `sensor.house_electric_meter_power_minute_average` (W)
-- `sensor.house_electric_meter_energy_today` (kWh)
-- `sensor.house_electric_meter_energy_this_month` (kWh)
-
-Gas and water sensors will be added later and are currently simulated with demo values.
-
----
-
-## 🚀 Installation
-
-1. Clone the repository
-2. Copy `secrets.example.yaml` to `secrets.yaml`
-3. Add your Wi‑Fi credentials
-4. Flash with ESPHome (USB or OTA)
-
----
-
-## 🧪 Development Notes
-
-- UI is rendered using a custom display lambda for maximum control
-- Optimized for a paper / e‑ink aesthetic
-- Gas and water values are currently placeholders
-- Screen updates are event‑driven for performance
-
----
-
-## 🗺 Roadmap
-
-- Gas meter integration
-- Water meter integration
-- Optional true e‑paper display variant
-- Layout and refresh configuration
-- Screenshot documentation
-
----
-
-## 📄 License
-
-MIT License (recommended)
-
----
-
-## 🙌 Credits
-
-Built with ESPHome and Home Assistant.
+## Status
+Stable (v0.2.11)
