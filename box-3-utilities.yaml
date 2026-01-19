@@ -1,9 +1,7 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.1.4
+# Version: 0.1.5
 #
-# FIX:
-# - hvac_action is a string sensor, not numeric
-# - Replaced sensor -> text_sensor and removed .c_str() misuse
+# PURE PACKAGE FILE (safe for `packages:` inclusion)
 
 substitutions:
   idle_color: 0xA7D8FF
@@ -13,34 +11,46 @@ spi:
   clk_pin: GPIO7
   mosi_pin: GPIO6
 
-# -----------------
-# Home Assistant Sensors (NUMERIC)
-# -----------------
+interval:
+  - interval: 30s
+    then:
+      - script.execute: request_draw
+
 sensor:
   - platform: homeassistant
     id: indoor_temperature
     entity_id: sensor.ecobee_temperature
     internal: true
+    on_value:
+      - script.execute: request_draw
 
   - platform: homeassistant
     id: outdoor_temperature
     entity_id: sensor.ecobee_outdoor_temperature
     internal: true
+    on_value:
+      - script.execute: request_draw
 
   - platform: homeassistant
     id: electric_power_w
     entity_id: sensor.house_electric_meter_power_minute_average
     internal: true
+    on_value:
+      - script.execute: request_draw
 
   - platform: homeassistant
     id: electric_energy_today
     entity_id: sensor.house_electric_meter_energy_today
     internal: true
+    on_value:
+      - script.execute: request_draw
 
   - platform: homeassistant
     id: electric_energy_month
     entity_id: sensor.house_electric_meter_energy_this_month
     internal: true
+    on_value:
+      - script.execute: request_draw
 
   - platform: template
     id: gas_month_ccf
@@ -50,6 +60,8 @@ sensor:
       return v;
     update_interval: 10s
     internal: true
+    on_value:
+      - script.execute: request_draw
 
   - platform: template
     id: water_month_gal
@@ -59,19 +71,17 @@ sensor:
       return v;
     update_interval: 10s
     internal: true
+    on_value:
+      - script.execute: request_draw
 
-# -----------------
-# Home Assistant Sensors (TEXT)
-# -----------------
 text_sensor:
   - platform: homeassistant
     id: hvac_action
     entity_id: sensor.ecobee_hvac_action
     internal: true
+    on_value:
+      - script.execute: request_draw
 
-# -----------------
-# Fonts
-# -----------------
 font:
   - file:
       type: gfonts
@@ -94,9 +104,6 @@ font:
     id: font_value
     size: 28
 
-# -----------------
-# Display
-# -----------------
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -116,10 +123,18 @@ display:
       it.fill(paper);
 
       it.print(10, 6, id(font_label), ink, "Indoor");
-      it.printf(10, 26, id(font_value), ink, "%.1f°", id(indoor_temperature).state);
+      if (!isnan(id(indoor_temperature).state)) {
+        it.printf(10, 26, id(font_value), ink, "%.1f°", id(indoor_temperature).state);
+      } else {
+        it.print(10, 26, id(font_value), ink, "--");
+      }
 
       it.print(120, 6, id(font_label), ink, "Outdoor");
-      it.printf(120, 26, id(font_value), ink, "%.1f°", id(outdoor_temperature).state);
+      if (!isnan(id(outdoor_temperature).state)) {
+        it.printf(120, 26, id(font_value), ink, "%.1f°", id(outdoor_temperature).state);
+      } else {
+        it.print(120, 26, id(font_value), ink, "--");
+      }
 
       it.print(240, 6, id(font_label), ink, "HVAC");
       it.print(240, 26, id(font_label), ink, id(hvac_action).state.c_str());
@@ -129,9 +144,21 @@ display:
       it.print(10, 70, id(font_title), ink, "UTILITIES");
 
       it.print(10, 110, id(font_label), ink, "Electric");
-      it.printf(10, 132, id(font_label), ink, "Now: %.0f W", id(electric_power_w).state);
-      it.printf(10, 152, id(font_label), ink, "Today: %.2f kWh", id(electric_energy_today).state);
-      it.printf(10, 172, id(font_label), ink, "Month: %.1f kWh", id(electric_energy_month).state);
+      if (!isnan(id(electric_power_w).state)) {
+        it.printf(10, 132, id(font_label), ink, "Now: %.0f W", id(electric_power_w).state);
+      } else {
+        it.print(10, 132, id(font_label), ink, "Now: -- W");
+      }
+      if (!isnan(id(electric_energy_today).state)) {
+        it.printf(10, 152, id(font_label), ink, "Today: %.2f kWh", id(electric_energy_today).state);
+      } else {
+        it.print(10, 152, id(font_label), ink, "Today: -- kWh");
+      }
+      if (!isnan(id(electric_energy_month).state)) {
+        it.printf(10, 172, id(font_label), ink, "Month: %.1f kWh", id(electric_energy_month).state);
+      } else {
+        it.print(10, 172, id(font_label), ink, "Month: -- kWh");
+      }
 
       it.line(10, 198, 310, 198, div);
 
@@ -143,5 +170,6 @@ display:
 
 script:
   - id: request_draw
+    mode: restart
     then:
       - component.update: box_display
