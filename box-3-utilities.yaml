@@ -1,18 +1,10 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.6
+# Version: 0.2.7
 #
-# Fix:
-# - Font path for MDI now uses a RAW GitHub URL so it works from a remote package.
-#
-# Icons (per your codepoints):
-# - HVAC flame: F0238
-# - Electric:   F140C
-# - Water:      F0E0A
-# - Cooling:    F0717
-#
-# NOTE:
-# Ensure the TTF exists in your GitHub repo at:
-#   fonts/materialdesignicons-webfont.ttf
+# Changes from 0.2.6:
+# - Fix font compile error: removed degree glyph from MDI font usage by switching MDI source to unpkg
+# - Keep ° rendered by the regular text fonts (gfonts), not the icon font
+# - MDI glyph list contains ONLY icon glyphs we actually use
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -27,6 +19,7 @@ interval:
       - script.execute: request_draw
 
 sensor:
+  # Top row
   - platform: homeassistant
     id: avg_indoor_temp
     entity_id: sensor.average_indoor_temperature
@@ -41,6 +34,7 @@ sensor:
     on_value:
       - script.execute: request_draw
 
+  # Electricity
   - platform: homeassistant
     id: electric_power_w
     entity_id: sensor.house_electric_meter_power_minute_average
@@ -55,7 +49,7 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # Placeholders (swap later)
+  # --- Placeholders (swap later) ---
   - platform: template
     id: gas_now_flow
     lambda: |-
@@ -93,6 +87,7 @@ sensor:
       - script.execute: request_draw
 
 text_sensor:
+  # Expected attribute values: "heating", "cooling", otherwise blank/idle
   - platform: homeassistant
     id: hvac_action
     entity_id: ${thermostat_entity}
@@ -102,6 +97,7 @@ text_sensor:
       - script.execute: request_draw
 
 font:
+  # Text fonts (° comes from these fonts, NOT from MDI)
   - file:
       type: gfonts
       family: Figtree
@@ -123,16 +119,16 @@ font:
     id: font_value
     size: 20
 
-  # Material Design Icons (RAW URL so it resolves correctly from packages)
-  - file: https://raw.githubusercontent.com/mrfixitpa/ESP32-S3-Utilities-Display/main/fonts/materialdesignicons-webfont.ttf
+  # Material Design Icons (webfont TTF) — required for icons.
+  # NOTE: Do NOT include "°" here; it is not an icon glyph.
+  - file: https://unpkg.com/@mdi/font@7.4.96/fonts/materialdesignicons-webfont.ttf
     id: font_mdi
     size: 22
     glyphs:
-      - "\U000F0238" # flame
-      - "\U000F140C" # electric
-      - "\U000F0E0A" # water
-      - "\U000F0717" # snowflake
-      - "\u00B0"     # degree
+      - "󰈸"          # mdi:fire (F0238) - GAS + HVAC HEAT
+      - "󰜗"          # mdi:snowflake (F0717) - HVAC COOL
+      - "\U000F140C" # Electric (F140C)
+      - "\U000F0E0A" # Water (F0E0A)
 
 display:
   - platform: ili9xxx
@@ -148,8 +144,6 @@ display:
     lambda: |-
       const Color paper = Color(255,255,255);
       const Color ink   = Color(0,0,0);
-      const Color red   = Color(220,38,38);
-      const Color blue  = Color(37,99,235);
 
       it.fill(paper);
 
@@ -168,23 +162,28 @@ display:
         fill_round(x+1, y+1, w-2, h-2, r-1, paper);
       };
 
-      // Top strip spacing (matched)
+      // ----------------
+      // Top strip
+      // ----------------
       it.print(10, 8, id(font_label), ink, "Indoor");
       it.printf(62, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
       it.print(224, 8, id(font_label), ink, "Outdoor");
       it.printf(276, 6, id(font_value), ink, "%.0f°", id(outdoor_temp).state);
 
-      // Center HVAC icon only (blank when idle)
+      // Center HVAC icon (blank when idle)
       const std::string act = id(hvac_action).state;
       if (act == "heating") {
-        it.print(152, 6, id(font_mdi), red, "\U000F0238");
+        it.print(152, 6, id(font_mdi), ink, "󰈸"); // fire
       } else if (act == "cooling") {
-        it.print(152, 6, id(font_mdi), blue, "\U000F0717");
+        it.print(152, 6, id(font_mdi), ink, "󰜗"); // snowflake
       }
 
       it.line(10, 34, 310, 34, ink);
 
+      // ----------------
+      // 3 pill cards
+      // ----------------
       int y = 44;
       const int h = 56;
 
@@ -195,10 +194,10 @@ display:
       it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
 
-      // Gas (flame for now)
+      // Gas
       y += h + 10;
       tile(10, y, 300, h, 14);
-      it.print(22, y+14, id(font_mdi), ink, "\U000F0238");
+      it.print(22, y+14, id(font_mdi), ink, "󰈸");
       it.print(44, y+10, id(font_title), ink, "Gas");
       it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
