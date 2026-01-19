@@ -1,0 +1,31 @@
+# =========================
+# ESPHome / Home Assistant
+# =========================
+.secrets.yaml
+secrets.yaml
+*.secrets.yaml
+
+# ESPHome build artifacts
+.esphome/
+.esphome_build/
+.esphomecache/
+
+# =========================
+# IDE / Editor
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs / temporary files
+# =========================
+*.log
+*.tmp
