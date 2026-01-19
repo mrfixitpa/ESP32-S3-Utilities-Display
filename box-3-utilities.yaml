@@ -1,10 +1,12 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.7
+# Version: 0.2.8
 #
-# Changes from 0.2.6:
-# - Fix font compile error: removed degree glyph from MDI font usage by switching MDI source to unpkg
-# - Keep ° rendered by the regular text fonts (gfonts), not the icon font
-# - MDI glyph list contains ONLY icon glyphs we actually use
+# Changes from 0.2.7:
+# - Fix download 404: @mdi/font version corrected to 7.4.47 (valid on unpkg)
+#
+# Notes:
+# - Icons require an icon font (MDI webfont). Regular gfonts cannot provide these glyphs.
+# - Do NOT include "°" in the MDI font glyph list; temps render ° using the regular text font.
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -120,8 +122,8 @@ font:
     size: 20
 
   # Material Design Icons (webfont TTF) — required for icons.
-  # NOTE: Do NOT include "°" here; it is not an icon glyph.
-  - file: https://unpkg.com/@mdi/font@7.4.96/fonts/materialdesignicons-webfont.ttf
+  # Verified available on unpkg.
+  - file: https://unpkg.com/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
     id: font_mdi
     size: 22
     glyphs:
