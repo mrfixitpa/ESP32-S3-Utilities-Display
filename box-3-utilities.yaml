@@ -1,12 +1,11 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.8
+# Version: 0.2.9
 #
-# Changes from 0.2.7:
-# - Fix download 404: @mdi/font version corrected to 7.4.47 (valid on unpkg)
-#
-# Notes:
-# - Icons require an icon font (MDI webfont). Regular gfonts cannot provide these glyphs.
-# - Do NOT include "°" in the MDI font glyph list; temps render ° using the regular text font.
+# Changes from 0.2.8:
+# - Fixed top-row alignment so Indoor and Outdoor blocks are symmetric
+#   * Outdoor label and temperature now right-aligned to the same margin
+#     that Indoor uses on the left.
+# - No logic or font changes; spacing only.
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -21,7 +20,6 @@ interval:
       - script.execute: request_draw
 
 sensor:
-  # Top row
   - platform: homeassistant
     id: avg_indoor_temp
     entity_id: sensor.average_indoor_temperature
@@ -36,7 +34,6 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # Electricity
   - platform: homeassistant
     id: electric_power_w
     entity_id: sensor.house_electric_meter_power_minute_average
@@ -51,7 +48,6 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # --- Placeholders (swap later) ---
   - platform: template
     id: gas_now_flow
     lambda: |-
@@ -89,7 +85,6 @@ sensor:
       - script.execute: request_draw
 
 text_sensor:
-  # Expected attribute values: "heating", "cooling", otherwise blank/idle
   - platform: homeassistant
     id: hvac_action
     entity_id: ${thermostat_entity}
@@ -99,7 +94,6 @@ text_sensor:
       - script.execute: request_draw
 
 font:
-  # Text fonts (° comes from these fonts, NOT from MDI)
   - file:
       type: gfonts
       family: Figtree
@@ -121,14 +115,12 @@ font:
     id: font_value
     size: 20
 
-  # Material Design Icons (webfont TTF) — required for icons.
-  # Verified available on unpkg.
   - file: https://unpkg.com/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
     id: font_mdi
     size: 22
     glyphs:
-      - "󰈸"          # mdi:fire (F0238) - GAS + HVAC HEAT
-      - "󰜗"          # mdi:snowflake (F0717) - HVAC COOL
+      - "󰈸"          # mdi:fire (F0238)
+      - "󰜗"          # mdi:snowflake (F0717)
       - "\U000F140C" # Electric (F140C)
       - "\U000F0E0A" # Water (F0E0A)
 
@@ -165,38 +157,38 @@ display:
       };
 
       // ----------------
-      // Top strip
+      // Top strip (symmetric layout)
       // ----------------
-      it.print(10, 8, id(font_label), ink, "Indoor");
-      it.printf(62, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
+      const int LEFT_X  = 10;
+      const int RIGHT_X = 310;
 
-      it.print(224, 8, id(font_label), ink, "Outdoor");
-      it.printf(276, 6, id(font_value), ink, "%.0f°", id(outdoor_temp).state);
+      it.print(LEFT_X, 8, id(font_label), ink, "Indoor");
+      it.printf(LEFT_X + 52, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
-      // Center HVAC icon (blank when idle)
+      it.print(RIGHT_X, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
+      it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+
       const std::string act = id(hvac_action).state;
       if (act == "heating") {
-        it.print(152, 6, id(font_mdi), ink, "󰈸"); // fire
+        it.print(152, 6, id(font_mdi), ink, "󰈸");
       } else if (act == "cooling") {
-        it.print(152, 6, id(font_mdi), ink, "󰜗"); // snowflake
+        it.print(152, 6, id(font_mdi), ink, "󰜗");
       }
 
       it.line(10, 34, 310, 34, ink);
 
       // ----------------
-      // 3 pill cards
+      // Utility cards
       // ----------------
       int y = 44;
       const int h = 56;
 
-      // Electricity
       tile(10, y, 300, h, 14);
       it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
       it.print(44, y+10, id(font_title), ink, "Electricity");
       it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
 
-      // Gas
       y += h + 10;
       tile(10, y, 300, h, 14);
       it.print(22, y+14, id(font_mdi), ink, "󰈸");
@@ -204,7 +196,6 @@ display:
       it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
 
-      // Water
       y += h + 10;
       tile(10, y, 300, h, 14);
       it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
