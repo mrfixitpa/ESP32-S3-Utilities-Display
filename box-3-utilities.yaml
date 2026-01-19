@@ -1,7 +1,12 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.1.5
+# Version: 0.1.6
 #
 # PURE PACKAGE FILE (safe for `packages:` inclusion)
+# Fixes:
+# - Indoor/Outdoor sensor entity_ids matched to the original working config
+# - HVAC action read from climate attribute (original behavior)
+# - Layout tightened so Gas/Water are visible on 320x240
+# - Redraw on sensor changes + safety refresh
 
 substitutions:
   idle_color: 0xA7D8FF
@@ -18,15 +23,15 @@ interval:
 
 sensor:
   - platform: homeassistant
-    id: indoor_temperature
-    entity_id: sensor.ecobee_temperature
+    id: avg_indoor_temp
+    entity_id: sensor.average_indoor_temperature
     internal: true
     on_value:
       - script.execute: request_draw
 
   - platform: homeassistant
-    id: outdoor_temperature
-    entity_id: sensor.ecobee_outdoor_temperature
+    id: outdoor_temp
+    entity_id: sensor.outdoor_temperature
     internal: true
     on_value:
       - script.execute: request_draw
@@ -52,6 +57,7 @@ sensor:
     on_value:
       - script.execute: request_draw
 
+  # Gas / Water placeholders (for now)
   - platform: template
     id: gas_month_ccf
     lambda: |-
@@ -77,7 +83,8 @@ sensor:
 text_sensor:
   - platform: homeassistant
     id: hvac_action
-    entity_id: sensor.ecobee_hvac_action
+    entity_id: ${thermostat_entity}
+    attribute: hvac_action
     internal: true
     on_value:
       - script.execute: request_draw
@@ -88,7 +95,7 @@ font:
       family: Figtree
       weight: 600
     id: font_title
-    size: 26
+    size: 24
 
   - file:
       type: gfonts
@@ -102,7 +109,7 @@ font:
       family: Figtree
       weight: 700
     id: font_value
-    size: 28
+    size: 26
 
 display:
   - platform: ili9xxx
@@ -122,16 +129,17 @@ display:
 
       it.fill(paper);
 
+      // --- TOP STRIP (HVAC) ---
       it.print(10, 6, id(font_label), ink, "Indoor");
-      if (!isnan(id(indoor_temperature).state)) {
-        it.printf(10, 26, id(font_value), ink, "%.1f°", id(indoor_temperature).state);
+      if (!isnan(id(avg_indoor_temp).state)) {
+        it.printf(10, 26, id(font_value), ink, "%.1f°", id(avg_indoor_temp).state);
       } else {
         it.print(10, 26, id(font_value), ink, "--");
       }
 
       it.print(120, 6, id(font_label), ink, "Outdoor");
-      if (!isnan(id(outdoor_temperature).state)) {
-        it.printf(120, 26, id(font_value), ink, "%.1f°", id(outdoor_temperature).state);
+      if (!isnan(id(outdoor_temp).state)) {
+        it.printf(120, 26, id(font_value), ink, "%.1f°", id(outdoor_temp).state);
       } else {
         it.print(120, 26, id(font_value), ink, "--");
       }
@@ -139,34 +147,37 @@ display:
       it.print(240, 6, id(font_label), ink, "HVAC");
       it.print(240, 26, id(font_label), ink, id(hvac_action).state.c_str());
 
-      it.line(10, 60, 310, 60, div);
+      it.line(10, 58, 310, 58, div);
 
-      it.print(10, 70, id(font_title), ink, "UTILITIES");
+      // --- UTILITIES ---
+      it.print(10, 64, id(font_title), ink, "UTILITIES");
 
-      it.print(10, 110, id(font_label), ink, "Electric");
+      // Electric (tighter vertical spacing)
+      it.print(10, 94, id(font_label), ink, "Electric");
       if (!isnan(id(electric_power_w).state)) {
-        it.printf(10, 132, id(font_label), ink, "Now: %.0f W", id(electric_power_w).state);
+        it.printf(10, 114, id(font_label), ink, "Now: %.0f W", id(electric_power_w).state);
       } else {
-        it.print(10, 132, id(font_label), ink, "Now: -- W");
+        it.print(10, 114, id(font_label), ink, "Now: -- W");
       }
       if (!isnan(id(electric_energy_today).state)) {
-        it.printf(10, 152, id(font_label), ink, "Today: %.2f kWh", id(electric_energy_today).state);
+        it.printf(10, 132, id(font_label), ink, "Today: %.2f kWh", id(electric_energy_today).state);
       } else {
-        it.print(10, 152, id(font_label), ink, "Today: -- kWh");
+        it.print(10, 132, id(font_label), ink, "Today: -- kWh");
       }
       if (!isnan(id(electric_energy_month).state)) {
-        it.printf(10, 172, id(font_label), ink, "Month: %.1f kWh", id(electric_energy_month).state);
+        it.printf(10, 150, id(font_label), ink, "Month: %.1f kWh", id(electric_energy_month).state);
       } else {
-        it.print(10, 172, id(font_label), ink, "Month: -- kWh");
+        it.print(10, 150, id(font_label), ink, "Month: -- kWh");
       }
 
-      it.line(10, 198, 310, 198, div);
+      it.line(10, 168, 310, 168, div);
 
-      it.print(10, 208, id(font_label), ink, "Gas Month");
-      it.printf(150, 208, id(font_label), ink, "%.1f CCF", id(gas_month_ccf).state);
+      // Gas / Water (now visible)
+      it.print(10, 180, id(font_label), ink, "Gas Month");
+      it.printf(170, 180, id(font_label), ink, "%.1f CCF", id(gas_month_ccf).state);
 
-      it.print(10, 228, id(font_label), ink, "Water Month");
-      it.printf(150, 228, id(font_label), ink, "%.0f gal", id(water_month_gal).state);
+      it.print(10, 204, id(font_label), ink, "Water Month");
+      it.printf(170, 204, id(font_label), ink, "%.0f gal", id(water_month_gal).state);
 
 script:
   - id: request_draw
