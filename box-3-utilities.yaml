@@ -1,17 +1,25 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.1.0
+# Version: 0.1.1
 #
-# NOTE:
-# - This file is a PURE ESPHome PACKAGE.
-# - It intentionally contains NO esphome:, wifi:, api:, ota:, logger:, or esp32: blocks.
-# - It is safe to include via `packages:`.
-# - HVAC strip logic is preserved conceptually and kept at the top of the display.
-# - Utilities section below uses placeholders for gas/water.
+# PURE PACKAGE FILE
+# - Safe for `packages:` inclusion
+# - Adds required SPI bus for ili9xxx
+# - No esphome / wifi / api / ota / logger blocks
 
 substitutions:
   idle_color: 0xA7D8FF
   thermostat_entity: climate.ecobee_thermostat
 
+# -----------------
+# SPI bus (REQUIRED for ili9xxx)
+# -----------------
+spi:
+  clk_pin: GPIO7
+  mosi_pin: GPIO6
+
+# -----------------
+# Home Assistant Sensors
+# -----------------
 sensor:
   - platform: homeassistant
     id: indoor_temperature
@@ -61,6 +69,9 @@ sensor:
     update_interval: 10s
     internal: true
 
+# -----------------
+# Fonts
+# -----------------
 font:
   - file:
       type: gfonts
@@ -83,6 +94,9 @@ font:
     id: font_value
     size: 28
 
+# -----------------
+# Display
+# -----------------
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -121,7 +135,11 @@ display:
       it.print(10, 228, id(font_label), ink, "Water Month");
       it.printf(150, 228, id(font_label), ink, "%.0f gal", id(water_month_gal).state);
 
+# -----------------
+# Script
+# -----------------
 script:
   - id: request_draw
     then:
       - component.update: box_display
+
