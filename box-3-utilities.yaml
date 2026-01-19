@@ -1,11 +1,17 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.4
+# Version: 0.2.5
 #
-# FINAL POLISH:
-# - Move Outdoor temp slightly left from screen edge
-# - Restore correct HVAC flame icon (heating) / snowflake (cooling)
-# - Use SAME flame icon for Gas pill (not water-drop)
-# - Keep e-ink styling (white bg, white pills, black borders/text)
+# Changes:
+# - Top strip spacing: Indoor/Outdoor label-to-value gap matched; Outdoor moved off bezel edge
+# - Restored MDI glyph icons via LOCAL TTF (no gfonts)
+#   * HVAC flame:   F0238
+#   * Water icon:   F0E0A
+#   * Electric icon F140C
+#
+# IMPORTANT:
+# This package expects the MDI font file to exist in your GitHub repo at:
+#   fonts/materialdesignicons-webfont.ttf
+# (Commit that file to your repo once; ESPHome will fetch it with the package.)
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -48,6 +54,7 @@ sensor:
     on_value:
       - script.execute: request_draw
 
+  # Placeholders (swap later)
   - platform: template
     id: gas_now_flow
     lambda: |-
@@ -115,6 +122,17 @@ font:
     id: font_value
     size: 20
 
+  # Material Design Icons (LOCAL file in repo)
+  - file: fonts/materialdesignicons-webfont.ttf
+    id: font_mdi
+    size: 22
+    glyphs:
+      - "\U000F0238" # flame (heating + gas)
+      - "\U000F140C" # electricity
+      - "\U000F0E0A" # water
+      - "\U000F0717" # snowflake (cooling)
+      - "\u00B0"     # degree symbol
+
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -149,45 +167,32 @@ display:
         fill_round(x+1, y+1, w-2, h-2, r-1, paper);
       };
 
-      auto icon_flame = [&](int x, int y, Color c) {
-        it.circle(x+8, y+12, 5, c);
-        it.line(x+8, y+1, x+4, y+8, c);
-        it.line(x+8, y+1, x+12, y+8, c);
-      };
-
-      auto icon_snow = [&](int x, int y, Color c) {
-        it.line(x+8, y, x+8, y+16, c);
-        it.line(x, y+8, x+16, y+8, c);
-        it.line(x+2, y+2, x+14, y+14, c);
-        it.line(x+14, y+2, x+2, y+14, c);
-      };
-
-      auto icon_bolt = [&](int x, int y, Color c) {
-        it.line(x+8, y, x+2, y+10, c);
-        it.line(x+2, y+10, x+7, y+10, c);
-        it.line(x+7, y+10, x+3, y+18, c);
-        it.line(x+3, y+18, x+14, y+6, c);
-      };
-
-      // Top strip
+      // ---- Top strip: keep equal label->value gap both sides ----
+      // Left:  label at 10, value at 62  (gap ~ same as right side)
+      // Right: label at 224, value at 276 (moved off bezel; no overlap)
       it.print(10, 8, id(font_label), ink, "Indoor");
       it.printf(62, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
-      it.print(210, 8, id(font_label), ink, "Outdoor");
-      it.printf(260, 6, id(font_value), ink, "%.0f°", id(outdoor_temp).state);
+      it.print(224, 8, id(font_label), ink, "Outdoor");
+      it.printf(276, 6, id(font_value), ink, "%.0f°", id(outdoor_temp).state);
 
+      // Center HVAC icon only (blank when idle)
       const std::string act = id(hvac_action).state;
-      if (act == "heating") icon_flame(152, 6, red);
-      else if (act == "cooling") icon_snow(152, 6, blue);
+      if (act == "heating") {
+        it.print(152, 6, id(font_mdi), red, "\U000F0238");
+      } else if (act == "cooling") {
+        it.print(152, 6, id(font_mdi), blue, "\U000F0717");
+      }
 
       it.line(10, 34, 310, 34, ink);
 
+      // ---- Pills ----
       int y = 44;
       const int h = 56;
 
       // Electricity
       tile(10, y, 300, h, 14);
-      icon_bolt(24, y+16, ink);
+      it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
       it.print(44, y+10, id(font_title), ink, "Electricity");
       it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
@@ -195,7 +200,7 @@ display:
       // Gas
       y += h + 10;
       tile(10, y, 300, h, 14);
-      icon_flame(24, y+16, ink);
+      it.print(22, y+14, id(font_mdi), ink, "\U000F0238");
       it.print(44, y+10, id(font_title), ink, "Gas");
       it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
@@ -203,7 +208,7 @@ display:
       // Water
       y += h + 10;
       tile(10, y, 300, h, 14);
-      it.circle(32, y+24, 6, ink);
+      it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
       it.print(44, y+10, id(font_title), ink, "Water");
       it.printf(44, y+34, id(font_label), ink, "Now %.1f", id(water_now_flow).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.0f gal", id(water_month_gal).state);
