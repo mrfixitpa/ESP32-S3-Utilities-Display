@@ -1,0 +1,1375 @@
+---
+substitutions:
+  idle_color: 0xA7D8FF
+  thermostat_entity: climate.ecobee_thermostat
+  name: box3-ha-touchdash
+  friendly_name: ESP32 S3 HA Touch Dash
+  loading_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/loading.png
+  idle_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/idle.png
+  listening_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/listening.png
+  thinking_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/thinking.png
+  replying_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/replying.png
+  error_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/error.png
+  timer_finished_illustration_file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/illustrations/ai-robot/timer_finished.png
+
+  loading_illustration_background_color: "000000"
+  idle_illustration_background_color: "1F3A5F"
+  listening_illustration_background_color: "FFFFFF"
+  thinking_illustration_background_color: "FFFFFF"
+  replying_illustration_background_color: "FFFFFF"
+  error_illustration_background_color: "000000"
+
+  voice_assist_idle_phase_id: "1"
+  voice_assist_listening_phase_id: "2"
+  voice_assist_thinking_phase_id: "3"
+  voice_assist_replying_phase_id: "4"
+  voice_assist_not_ready_phase_id: "10"
+  voice_assist_error_phase_id: "11"
+  voice_assist_muted_phase_id: "12"
+  voice_assist_timer_finished_phase_id: "20"
+
+  # These unique characters have been extracted from every test file of every language available on https://github.com/home-assistant/intents (14 March 2024)
+  # However, the Figtree font only contains Latin characters, so there is no point using this... unlessyou change the font configuration accordingly.
+  allowed_characters: " !#%'()+,-./0123456789:;<>?@ABCDEFGHIJKLMNOPQRSTUVWYZ[]_abcdefghijklmnopqrstuvwxyz{|}°²³µ¿ÁÂÄÅÉÖÚßàáâãäåæçèéêëìíîðñòóôõöøùúûüýþāăąćčďĐđēėęěğĮįıļľŁłńňőřśšťũūůűųźŻżŽžơưșțΆΈΌΐΑΒΓΔΕΖΗΘΚΜΝΠΡΣΤΥΦάέήίαβγδεζηθικλμνξοπρςστυφχψωϊόύώАБВГДЕЖЗИКЛМНОПРСТУХЦЧШЪЭЮЯабвгдежзийклмнопрстуфхцчшщъыьэюяёђєіїјљњћאבגדהוזחטיכלםמןנסעפץצקרשת،ءآأإئابةتجحخدذرزسشصضطظعغفقكلمنهوىيٹپچڈکگںھہیےংকচতধনফবযরলশষস়ািু্చయలిెొ్ംഅആഇഈഉഎഓകഗങചജഞടഡണതദധനപഫബഭമയരറലളവശസഹാിീുൂെേൈ്ൺൻർൽൾაბგდევზთილმნოპრსტუფქყშჩცძჭხạảấầẩậắặẹẽếềểệỉịọỏốồổỗộớờởợụủứừửữựỳ—、一上不个中为主乾了些亮人任低佔何作供依侧係個側偵充光入全关冇冷几切到制前動區卧厅厨及口另右吊后吗启吸呀咗哪唔問啟嗎嘅嘛器圍在场執場外多大始安定客室家密寵对將小少左已帘常幫幾库度庫廊廚廳开式後恆感態成我戲戶户房所扇手打执把拔换掉控插摄整斯新明是景暗更最會有未本模機檯櫃欄次正氏水沒没洗活派温測源溫漏潮激濕灯為無煙照熱燈燥物狀玄现現瓦用發的盞目着睡私空窗立笛管節簾籬紅線红罐置聚聲脚腦腳臥色节著行衣解設調請謝警设调走路車车运連遊運過道邊部都量鎖锁門閂閉開關门闭除隱離電震霧面音頂題顏颜風风食餅餵가간감갔강개거게겨결경고공과관그금급기길깥꺼껐꼽나난내네놀누는능니다닫담대더데도동됐되된됨둡드든등디때떤뜨라래러렇렌려로료른를리림링마많명몇모무문물뭐바밝방배변보부불블빨뽑사산상색서설성세센션소쇼수스습시신실싱아안않알았애야어얼업없었에여연열옆오온완외왼요운움워원위으은을음의이인일임입있작잠장재전절정제져조족종주줄중줘지직진짐쪽차창천최추출충치침커컴켜켰쿠크키탁탄태탬터텔통트튼티파팬퍼폰표퓨플핑한함해했행혀현화활후휴힘，？"
+
+  # Add support for non-unicode characters by using better glyphset
+  font_glyphsets: "GF_Latin_Core"
+  # for Greek use "Noto Sans" for other languages use a compatible font family
+  font_family: Figtree
+
+esphome:
+  name: box3-ha-touchdash
+  friendly_name: ESP32 S3 HA Touch Dash
+  project:
+    name: mrfixitpa.esp32_s3_box_3_ha_touch_dashboard
+    version: "0.3.9"
+  min_version: 2025.5.0
+  name_add_mac_suffix: true
+  on_boot:
+    priority: 600
+    then:
+      - script.execute: request_draw
+      - delay: 30s
+      - if:
+          condition:
+            lambda: return id(init_in_progress);
+          then:
+            - lambda: id(init_in_progress) = false;
+            - script.execute: request_draw
+
+esp32:
+  board: esp32s3box
+  flash_size: 16MB
+  cpu_frequency: 240MHz
+  framework:
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+
+psram:
+  mode: octal
+  speed: 80MHz
+
+api:
+  on_client_connected:
+    - script.execute: request_draw
+  on_client_disconnected:
+    - script.execute: request_draw
+
+ota:
+  - platform: esphome
+    id: ota_esphome
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+
+wifi:
+  ap:
+  on_connect:
+    - script.execute: request_draw
+  on_disconnect:
+    - script.execute: request_draw
+
+captive_portal:
+
+
+
+
+sensor:
+  - platform: homeassistant
+    id: avg_indoor_temp
+    entity_id: sensor.average_indoor_temperature
+    internal: true
+
+  - platform: homeassistant
+    id: outdoor_temp
+    entity_id: sensor.outdoor_temperature
+    internal: true
+
+
+
+  - platform: homeassistant
+    id: emporia_power_w
+    entity_id: sensor.house_electric_meter_power_minute_average
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: emporia_energy_today_kwh
+    entity_id: sensor.house_electric_meter_energy_today
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: emporia_energy_month_kwh
+    entity_id: sensor.house_electric_meter_energy_this_month
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: template
+    id: demo_gas_flow
+    internal: true
+    update_interval: 3s
+    lambda: |-
+      static int t = 0;
+      t++;
+      if ((t % 30) < 3) return 0.12f;
+      return 0.00f;
+    on_value:
+      - script.execute: request_draw
+
+  - platform: template
+    id: demo_gas_month_ccf
+    internal: true
+    update_interval: 5s
+    lambda: |-
+      static float v = 12.3f;
+      v += 0.02f;
+      return v;
+    on_value:
+      - script.execute: request_draw
+
+  - platform: template
+    id: demo_water_flow
+    internal: true
+    update_interval: 3s
+    lambda: |-
+      static int t = 0;
+      t++;
+      if ((t % 40) < 4) return 0.7f;
+      return 0.0f;
+    on_value:
+      - script.execute: request_draw
+
+  - platform: template
+    id: demo_water_month_gal
+    internal: true
+    update_interval: 5s
+    lambda: |-
+      static float v = 820.0f;
+      v += 0.8f;
+      return v;
+    on_value:
+      - script.execute: request_draw
+time:
+  - platform: homeassistant
+    id: ha_time
+    on_time:
+      - seconds: 0
+        then:
+          - if:
+              condition:
+                lambda: |-
+                  return
+                    !id(init_in_progress) &&
+                    wifi::global_wifi_component->is_connected() &&
+                    api::global_api_server->is_connected() &&
+                    (id(voice_assistant_phase) == ${voice_assist_idle_phase_id});
+              then:
+                - script.execute: request_draw
+
+button:
+  - platform: factory_reset
+    id: factory_reset_btn
+    internal: true
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO0
+      mode: INPUT_PULLUP
+      inverted: true
+    id: left_top_button
+    internal: true
+    on_multi_click:
+      - timing:
+          - ON for at least 50ms
+          - OFF for at least 50ms
+        then:
+          - switch.turn_off: timer_ringing
+      - timing:
+          - ON for at least 10s
+        then:
+          - button.press: factory_reset_btn
+
+  - platform: homeassistant
+    id: lr_lights_on
+    entity_id: light.living_room_can_lights
+    internal: true
+    on_state:
+      - script.execute: request_draw
+
+
+  - platform: homeassistant
+    id: dr_light_on
+    entity_id: light.dining_room_light
+    internal: true
+    on_state:
+      - script.execute: request_draw
+
+
+  - platform: homeassistant
+    id: kitchen_lights_on
+    entity_id: light.kitchen_lights
+    internal: true
+    on_state:
+      - script.execute: request_draw
+
+
+output:
+  - platform: ledc
+    pin: GPIO47
+    id: backlight_output
+
+  - platform: template
+    id: ui_r_out
+    type: float
+    write_action:
+      - lambda: |-
+          id(ui_theme_r) = (uint8_t) roundf(state * 255.0f);
+          id(draw_display).execute();
+
+  - platform: template
+    id: ui_g_out
+    type: float
+    write_action:
+      - lambda: |-
+          id(ui_theme_g) = (uint8_t) roundf(state * 255.0f);
+          id(draw_display).execute();
+
+  - platform: template
+    id: ui_b_out
+    type: float
+    write_action:
+      - lambda: |-
+          id(ui_theme_b) = (uint8_t) roundf(state * 255.0f);
+          id(draw_display).execute();
+
+
+light:
+  - platform: monochromatic
+    id: led
+    name: Screen
+    icon: "mdi:television"
+    entity_category: config
+    output: backlight_output
+    restore_mode: RESTORE_DEFAULT_ON
+    default_transition_length: 250ms
+
+
+  - platform: rgb
+    name: "Box3 UI Theme"
+    id: ui_theme_light
+    icon: "mdi:palette"
+    red: ui_r_out
+    green: ui_g_out
+    blue: ui_b_out
+    restore_mode: RESTORE_DEFAULT_ON
+    on_turn_on:
+      - lambda: |-
+          id(ui_theme_on) = true;
+      - script.execute: request_draw
+    on_turn_off:
+      - lambda: |-
+          id(ui_theme_on) = false;
+      - script.execute: request_draw
+
+i2c:
+  scl: GPIO18
+  sda: GPIO8
+
+i2s_audio:
+  - id: i2s_audio_bus
+    i2s_lrclk_pin: GPIO45
+    i2s_bclk_pin: GPIO17
+    i2s_mclk_pin: GPIO2
+
+
+touchscreen:
+  - platform: gt911
+    id: box_touch
+    interrupt_pin: GPIO3
+    # Note: reset_pin is shared with the LCD reset line on the ESP32-S3-BOX-3, so we leave it unset.
+    update_interval: 100ms
+    on_touch:
+      then:
+        - lambda: |-
+            const uint32_t now_ms = millis();
+            if (now_ms - id(last_touch_ms) < 250) return;
+            id(last_touch_ms) = now_ms;
+
+            // Bottom button row hitboxes (3 buttons)
+            const int x = touch.x;
+            const int y = touch.y;
+            // Only act in the bottom button row area
+            if (y < 145) return;
+            if (x < 110) {
+              id(toggle_living_room_lights).execute();
+            } else if (x < 210) {
+              id(toggle_dining_room_light).execute();
+            } else {
+              id(toggle_kitchen_lights).execute();
+            }
+
+audio_adc:
+  - platform: es7210
+    id: es7210_adc
+    bits_per_sample: 16bit
+    sample_rate: 16000
+
+audio_dac:
+  - platform: es8311
+    id: es8311_dac
+    bits_per_sample: 16bit
+    sample_rate: 48000
+
+microphone:
+  - platform: i2s_audio
+    id: box_mic
+    sample_rate: 16000
+    i2s_din_pin: GPIO16
+    bits_per_sample: 16bit
+    adc_type: external
+
+speaker:
+  - platform: i2s_audio
+    id: box_speaker
+    i2s_dout_pin: GPIO15
+    dac_type: external
+    sample_rate: 48000
+    bits_per_sample: 16bit
+    channel: left
+    audio_dac: es8311_dac
+    buffer_duration: 100ms
+
+media_player:
+  - platform: speaker
+    name: None
+    id: speaker_media_player
+    volume_min: 0.5
+    volume_max: 0.8
+    announcement_pipeline:
+      speaker: box_speaker
+      format: FLAC
+      sample_rate: 48000
+      num_channels: 1  # S3 Box only has one output channel
+    files:
+      - id: timer_finished_sound
+        file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/sounds/timer_finished.flac
+      - id: wake_sound
+        file: https://raw.githubusercontent.com/mrfixitpa/esp32-s3-box-3-ha-touch-dashboard/main/assets/sounds/wake_sound.flac
+    on_announcement:
+      # Stop the wake word (mWW or VA) if the mic is capturing
+      - if:
+          condition:
+            - microphone.is_capturing:
+          then:
+            - script.execute: stop_wake_word
+            # Ensure VA stops before moving on
+            - if:
+                condition:
+                  - lambda: return id(wake_word_engine_location).current_option() == "In Home Assistant";
+                then:
+                  - wait_until:
+                      - not:
+                          voice_assistant.is_running:
+      # Since VA isn't running, this is user-intiated media playback. Draw the mute display
+      - if:
+          condition:
+            not:
+              voice_assistant.is_running:
+          then:
+            - lambda: id(voice_assistant_phase) = ${voice_assist_muted_phase_id};
+            - script.execute: request_draw
+    on_idle:
+      # Since VA isn't running, this is the end of user-intiated media playback. Restart the wake word.
+      - if:
+          condition:
+            not:
+              voice_assistant.is_running:
+          then:
+            - script.execute: start_wake_word
+            - script.execute: set_idle_or_mute_phase
+            - script.execute: request_draw
+
+micro_wake_word:
+  id: mww
+  models:
+    - okay_nabu
+    - hey_jarvis
+  on_wake_word_detected:
+    - if:
+        condition:
+          and:
+            - not:
+                voice_assistant.is_running:
+                  id: va
+            - switch.is_off: mute
+        then:
+          - media_player.speaker.play_on_device_media_file:
+              media_file: wake_sound
+              announcement: true
+          - delay: 300ms
+          - display.page.show: listening_page
+          - component.update: s3_box_lcd
+          - wait_until:
+              condition:
+                and:
+                  - not:
+                      media_player.is_announcing:
+                        id: speaker_media_player
+                  - not:
+                      speaker.is_playing:
+                        id: box_speaker
+              timeout: 2s
+    - voice_assistant.start:
+        id: va
+        wake_word: !lambda return wake_word;
+
+voice_assistant:
+  id: va
+  microphone: box_mic
+  media_player: speaker_media_player
+  micro_wake_word: mww
+  noise_suppression_level: 2
+  auto_gain: 31dBFS
+  volume_multiplier: 2.0
+  on_listening:
+    - lambda: id(voice_assistant_phase) = ${voice_assist_listening_phase_id};
+    - text_sensor.template.publish:
+        id: text_request
+        state: "..."
+    - text_sensor.template.publish:
+        id: text_response
+        state: "..."
+    - script.execute: request_draw
+  on_stt_vad_end:
+    - lambda: id(voice_assistant_phase) = ${voice_assist_thinking_phase_id};
+    - script.execute: request_draw
+  on_stt_end:
+    - text_sensor.template.publish:
+        id: text_request
+        state: !lambda return x;
+    - script.execute: request_draw
+  on_tts_start:
+    - text_sensor.template.publish:
+        id: text_response
+        state: !lambda return x;
+    - lambda: id(voice_assistant_phase) = ${voice_assist_replying_phase_id};
+    - script.execute: request_draw
+  on_end:
+    # Wait a short amount of time to see if an announcement starts
+    - wait_until:
+        condition:
+          - media_player.is_announcing:
+        timeout: 0.5s
+    # Announcement is finished and the I2S bus is free
+    - wait_until:
+        - and:
+            - not:
+                media_player.is_announcing:
+            - not:
+                speaker.is_playing:
+    # Restart only mWW if enabled; streaming wake words automatically restart
+    - if:
+        condition:
+          - lambda: return id(wake_word_engine_location).current_option() == "On device";
+        then:
+          - lambda: id(va).set_use_wake_word(false);
+          - micro_wake_word.start:
+    - script.execute: set_idle_or_mute_phase
+    - script.execute: request_draw
+    # Clear text sensors
+    - text_sensor.template.publish:
+        id: text_request
+        state: ""
+    - text_sensor.template.publish:
+        id: text_response
+        state: ""
+  on_error:
+    - if:
+        condition:
+          lambda: return !id(init_in_progress);
+        then:
+          - lambda: id(voice_assistant_phase) = ${voice_assist_error_phase_id};
+          - script.execute: request_draw
+          - delay: 1s
+          - if:
+              condition:
+                switch.is_off: mute
+              then:
+                - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
+              else:
+                - lambda: id(voice_assistant_phase) = ${voice_assist_muted_phase_id};
+          - script.execute: request_draw
+  on_client_connected:
+    - lambda: id(init_in_progress) = false;
+    - script.execute: start_wake_word
+    - script.execute: set_idle_or_mute_phase
+    - script.execute: request_draw
+  on_client_disconnected:
+    - script.execute: stop_wake_word
+    - lambda: id(voice_assistant_phase) = ${voice_assist_not_ready_phase_id};
+    - script.execute: request_draw
+  on_timer_started:
+    - script.execute: request_draw
+  on_timer_cancelled:
+    - script.execute: request_draw
+  on_timer_updated:
+    - script.execute: request_draw
+  on_timer_tick:
+    - script.execute: request_draw
+  on_timer_finished:
+    - switch.turn_on: timer_ringing
+    - wait_until:
+        media_player.is_announcing:
+    - lambda: id(voice_assistant_phase) = ${voice_assist_timer_finished_phase_id};
+    - script.execute: request_draw
+
+script:
+
+  - id: draw_hvac_icon
+    then:
+      - lambda: |-
+          // Draw a small HVAC status icon near the top-right.
+          // Uses Home Assistant climate attribute: hvac_action (heating/cooling/idle)
+          const std::string action = id(hvac_action).state.c_str();
+          if (action == "heating") {
+            id(s3_box_lcd).print(304, 14, id(font_mdi), Color(255, 0, 0), TextAlign::CENTER, "󰈸");  // fire
+          } else if (action == "cooling") {
+            id(s3_box_lcd).print(304, 14, id(font_mdi), Color(0, 140, 255), TextAlign::CENTER, "󰜗");  // snowflake
+          }
+
+  - id: toggle_living_room_lights
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.living_room_can_lights
+      - script.execute: request_draw
+
+  - id: toggle_dining_room_light
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.dining_room_light
+      - script.execute: request_draw
+
+  - id: toggle_kitchen_lights
+    then:
+      - homeassistant.service:
+          service: light.toggle
+          data:
+            entity_id: light.kitchen_lights
+      - script.execute: request_draw
+
+  - id: draw_display
+    then:
+      - if:
+          condition:
+            lambda: return !id(init_in_progress);
+          then:
+            - if:
+                condition:
+                  wifi.connected:
+                then:
+                  - if:
+                      condition:
+                        api.connected:
+                      then:
+                        - lambda: |
+                            switch(id(voice_assistant_phase)) {
+                              case ${voice_assist_listening_phase_id}:
+                                id(s3_box_lcd).show_page(listening_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              case ${voice_assist_thinking_phase_id}:
+                                id(s3_box_lcd).show_page(thinking_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              case ${voice_assist_replying_phase_id}:
+                                id(s3_box_lcd).show_page(replying_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              case ${voice_assist_error_phase_id}:
+                                id(s3_box_lcd).show_page(error_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              case ${voice_assist_muted_phase_id}:
+                                id(s3_box_lcd).show_page(muted_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              case ${voice_assist_not_ready_phase_id}:
+                                id(s3_box_lcd).show_page(no_ha_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              case ${voice_assist_timer_finished_phase_id}:
+                                id(s3_box_lcd).show_page(timer_finished_page);
+                                id(s3_box_lcd).update();
+                                break;
+                              default:
+                                id(s3_box_lcd).show_page(idle_page);
+                                id(s3_box_lcd).update();
+                            }
+                      else:
+                        - display.page.show: no_ha_page
+                        - component.update: s3_box_lcd
+                else:
+                  - display.page.show: no_wifi_page
+                  - component.update: s3_box_lcd
+          else:
+            - display.page.show: initializing_page
+            - component.update: s3_box_lcd
+
+  - id: request_draw
+    mode: restart
+    then:
+      - lambda: |-
+          id(draw_pending) = true;
+      - delay: 120ms
+      - if:
+          condition:
+            lambda: 'return id(draw_pending);'
+          then:
+            - lambda: 'id(draw_pending) = false;'
+            - script.execute: draw_display
+
+
+  - id: fetch_first_active_timer
+    then:
+      - lambda: |
+          const auto timers = id(va).get_timers();
+          auto output_timer = timers.begin()->second;
+          for (auto &iterable_timer : timers) {
+            if (iterable_timer.second.is_active && iterable_timer.second.seconds_left <= output_timer.seconds_left) {
+              output_timer = iterable_timer.second;
+            }
+          }
+          id(global_first_active_timer) = output_timer;
+  - id: check_if_timers_active
+    then:
+      - lambda: |
+          const auto timers = id(va).get_timers();
+          bool output = false;
+          if (timers.size() > 0) {
+            for (auto &iterable_timer : timers) {
+              if(iterable_timer.second.is_active) {
+                output = true;
+              }
+            }
+          }
+          id(global_is_timer_active) = output;
+  - id: fetch_first_timer
+    then:
+      - lambda: |
+          const auto timers = id(va).get_timers();
+          auto output_timer = timers.begin()->second;
+          for (auto &iterable_timer : timers) {
+            if (iterable_timer.second.seconds_left <= output_timer.seconds_left) {
+              output_timer = iterable_timer.second;
+            }
+          }
+          id(global_first_timer) = output_timer;
+  - id: check_if_timers
+    then:
+      - lambda: |
+          const auto timers = id(va).get_timers();
+          bool output = false;
+          if (timers.size() > 0) {
+            output = true;
+          }
+          id(global_is_timer) = output;
+
+  - id: draw_timer_timeline
+    then:
+      - lambda: |
+          id(check_if_timers_active).execute();
+          id(check_if_timers).execute();
+          if (id(global_is_timer_active)){
+            id(fetch_first_active_timer).execute();
+            int active_pixels = round( 320 * id(global_first_active_timer).seconds_left / max(id(global_first_active_timer).total_seconds , static_cast<uint32_t>(1)) );
+            if (active_pixels > 0){
+              id(s3_box_lcd).filled_rectangle(0 , 225 , 320 , 15 , Color::WHITE );
+              id(s3_box_lcd).filled_rectangle(0 , 226 , active_pixels , 13 , id(active_timer_color) );
+            }
+          } else if (id(global_is_timer)){
+            id(fetch_first_timer).execute();
+            int active_pixels = round( 320 * id(global_first_timer).seconds_left / max(id(global_first_timer).total_seconds , static_cast<uint32_t>(1)));
+            if (active_pixels > 0){
+              id(s3_box_lcd).filled_rectangle(0 , 225 , 320 , 15 , Color::WHITE );
+              id(s3_box_lcd).filled_rectangle(0 , 226 , active_pixels , 13 , id(paused_timer_color) );
+            }
+          }
+  - id: draw_active_timer_widget
+    then:
+      - lambda: |
+          id(check_if_timers_active).execute();
+          if (id(global_is_timer_active)){
+            id(s3_box_lcd).filled_rectangle(80 , 40 , 160 , 50 , Color::WHITE );
+            id(s3_box_lcd).rectangle(80 , 40 , 160 , 50 , Color::BLACK );
+
+            id(fetch_first_active_timer).execute();
+            int hours_left = floor(id(global_first_active_timer).seconds_left / 3600);
+            int minutes_left = floor((id(global_first_active_timer).seconds_left - hours_left * 3600) / 60);
+            int seconds_left = id(global_first_active_timer).seconds_left - hours_left * 3600 - minutes_left * 60 ;
+            auto display_hours = (hours_left < 10 ? "0" : "") + std::to_string(hours_left);
+            auto display_minute = (minutes_left < 10 ? "0" : "") + std::to_string(minutes_left);
+            auto display_seconds = (seconds_left  < 10 ? "0" : "") + std::to_string(seconds_left) ;
+
+            std::string display_string = "";
+            if (hours_left > 0) {
+              display_string = display_hours + ":" + display_minute;
+            } else {
+              display_string = display_minute + ":" + display_seconds;
+            }
+            id(s3_box_lcd).printf(120, 47, id(font_timer), Color::BLACK, "%s", display_string.c_str());
+          }
+  # Starts either mWW or the streaming wake word, depending on the configured location
+  - id: start_wake_word
+    then:
+      - if:
+          condition:
+            and:
+              - not:
+                  - voice_assistant.is_running:
+              - lambda: return id(wake_word_engine_location).current_option() == "On device";
+          then:
+            - lambda: id(va).set_use_wake_word(false);
+            - micro_wake_word.start:
+      - if:
+          condition:
+            and:
+              - not:
+                  - voice_assistant.is_running:
+              - lambda: return id(wake_word_engine_location).current_option() == "In Home Assistant";
+          then:
+            - lambda: id(va).set_use_wake_word(true);
+            - voice_assistant.start_continuous:
+  # Stops either mWW or the streaming wake word, depending on the configured location
+  - id: stop_wake_word
+    then:
+      - if:
+          condition:
+            lambda: return id(wake_word_engine_location).current_option() == "In Home Assistant";
+          then:
+            - lambda: id(va).set_use_wake_word(false);
+            - voice_assistant.stop:
+      - if:
+          condition:
+            lambda: return id(wake_word_engine_location).current_option() == "On device";
+          then:
+            - micro_wake_word.stop:
+  # Set the voice assistant phase to idle or muted, depending on if the software mute switch is activated
+  - id: set_idle_or_mute_phase
+    then:
+      - if:
+          condition:
+            switch.is_off: mute
+          then:
+            - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
+          else:
+            - lambda: id(voice_assistant_phase) = ${voice_assist_muted_phase_id};
+
+switch:
+  - platform: template
+    name: Clock AM/PM Indicator
+    id: ampm_toggle
+    restore_mode: RESTORE_DEFAULT_ON
+    optimistic: true
+    on_turn_on:
+      - lambda: id(show_ampm) = true;
+      - script.execute: request_draw
+    on_turn_off:
+      - lambda: id(show_ampm) = false;
+      - script.execute: request_draw
+  - platform: template
+    name: Clock 24 Hour Mode
+    id: clock_24h_mode
+    restore_mode: RESTORE_DEFAULT_OFF
+    lambda: |-
+      return id(use_24h);
+    turn_on_action:
+      - lambda: |-
+          id(use_24h) = true;
+          id(show_ampm) = false;
+      - switch.turn_off: ampm_toggle
+      - script.execute: request_draw
+    turn_off_action:
+      - lambda: |-
+          id(use_24h) = false;
+          id(show_ampm) = id(ampm_toggle).state;
+      - script.execute: request_draw
+
+
+  - platform: gpio
+    name: Speaker Enable
+    pin: GPIO46
+    restore_mode: RESTORE_DEFAULT_ON
+    entity_category: config
+    disabled_by_default: true
+  - platform: template
+    name: Mute
+    id: mute
+    icon: "mdi:microphone-off"
+    optimistic: true
+    restore_mode: RESTORE_DEFAULT_OFF
+    entity_category: config
+    on_turn_off:
+      - microphone.unmute:
+      - lambda: id(voice_assistant_phase) = ${voice_assist_idle_phase_id};
+      - script.execute: request_draw
+    on_turn_on:
+      - microphone.mute:
+      - lambda: id(voice_assistant_phase) = ${voice_assist_muted_phase_id};
+      - script.execute: request_draw
+  - platform: template
+    id: timer_ringing
+    optimistic: true
+    internal: true
+    restore_mode: ALWAYS_OFF
+    on_turn_off:
+      # Turn off the repeat mode and disable the pause between playlist items
+      - lambda: |-
+              id(speaker_media_player)
+                ->make_call()
+                .set_command(media_player::MediaPlayerCommand::MEDIA_PLAYER_COMMAND_REPEAT_OFF)
+                .set_announcement(true)
+                .perform();
+              id(speaker_media_player)->set_playlist_delay_ms(speaker::AudioPipelineType::ANNOUNCEMENT, 0);
+      # Stop playing the alarm
+      - media_player.stop:
+          announcement: true
+    on_turn_on:
+      # Turn on the repeat mode and pause for 1000 ms between playlist items/repeats
+      - lambda: |-
+            id(speaker_media_player)
+              ->make_call()
+              .set_command(media_player::MediaPlayerCommand::MEDIA_PLAYER_COMMAND_REPEAT_ONE)
+              .set_announcement(true)
+              .perform();
+            id(speaker_media_player)->set_playlist_delay_ms(speaker::AudioPipelineType::ANNOUNCEMENT, 1000);
+      - media_player.speaker.play_on_device_media_file:
+          media_file: timer_finished_sound
+          announcement: true
+      - delay: 15min
+      - switch.turn_off: timer_ringing
+
+number:
+  - platform: template
+    name: AM/PM Horizontal Offset
+    id: ampm_offset_x
+    entity_category: config
+    min_value: -80
+    max_value: 80
+    step: 1
+    restore_value: true
+    initial_value: -20
+    optimistic: true
+    on_value:
+      then:
+        - script.execute: request_draw
+
+  - platform: template
+    name: AM/PM Vertical Offset
+    id: ampm_offset_y
+    entity_category: config
+    min_value: -40
+    max_value: 40
+    step: 1
+    restore_value: true
+    initial_value: 15
+    optimistic: true
+    on_value:
+      then:
+        - script.execute: request_draw
+
+  - platform: template
+    name: Clock Horizontal Offset
+    id: clock_offset_x
+    entity_category: config
+    min_value: -60
+    max_value: 60
+    step: 1
+    restore_value: true
+    initial_value: 0
+    optimistic: true
+    on_value:
+      then:
+        - script.execute: request_draw
+
+select:
+  - platform: template
+    entity_category: config
+    name: Wake word engine location
+    id: wake_word_engine_location
+    icon: "mdi:account-voice"
+    optimistic: true
+    restore_value: true
+    options:
+      - In Home Assistant
+      - On device
+    initial_option: On device
+    on_value:
+      - if:
+          condition:
+            lambda: return !id(init_in_progress);
+          then:
+            - wait_until:
+                lambda: return id(voice_assistant_phase) == ${voice_assist_muted_phase_id} || id(voice_assistant_phase) == ${voice_assist_idle_phase_id};
+            - if:
+                condition:
+                  lambda: return x == "In Home Assistant";
+                then:
+                  - micro_wake_word.stop
+                  - delay: 500ms
+                  - if:
+                      condition:
+                        switch.is_off: mute
+                      then:
+                        - lambda: id(va).set_use_wake_word(true);
+                        - voice_assistant.start_continuous:
+            - if:
+                condition:
+                  lambda: return x == "On device";
+                then:
+                  - lambda: id(va).set_use_wake_word(false);
+                  - voice_assistant.stop
+                  - delay: 500ms
+                  - if:
+                      condition:
+                        switch.is_off: mute
+                      then:
+                        - micro_wake_word.start
+
+globals:
+  - id: draw_pending
+    type: bool
+    restore_value: no
+    initial_value: "false"
+
+  - id: last_touch_ms
+    type: uint32_t
+    restore_value: no
+    initial_value: "0"
+
+  - id: show_ampm
+    type: bool
+    restore_value: true
+    initial_value: "true"
+
+  - id: use_24h
+    type: bool
+    restore_value: true
+    initial_value: "false"
+
+
+  - id: ui_theme_on
+    type: bool
+    restore_value: true
+    initial_value: "true"
+
+  - id: ui_theme_r
+    type: uint8_t
+    restore_value: true
+    initial_value: "255"
+
+  - id: ui_theme_g
+    type: uint8_t
+    restore_value: true
+    initial_value: "255"
+
+  - id: ui_theme_b
+    type: uint8_t
+    restore_value: true
+    initial_value: "255"
+
+  - id: init_in_progress
+    type: bool
+    restore_value: false
+    initial_value: "true"
+  - id: voice_assistant_phase
+    type: int
+    restore_value: false
+    initial_value: ${voice_assist_not_ready_phase_id}
+  - id: global_first_active_timer
+    type: voice_assistant::Timer
+    restore_value: false
+  - id: global_is_timer_active
+    type: bool
+    restore_value: false
+  - id: global_first_timer
+    type: voice_assistant::Timer
+    restore_value: false
+  - id: global_is_timer
+    type: bool
+    restore_value: false
+
+image:
+  - file: ${error_illustration_file}
+    id: casita_error
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: ${idle_illustration_file}
+    id: casita_idle
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: ${listening_illustration_file}
+    id: casita_listening
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: ${thinking_illustration_file}
+    id: casita_thinking
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: ${replying_illustration_file}
+    id: casita_replying
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: ${timer_finished_illustration_file}
+    id: casita_timer_finished
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: ${loading_illustration_file}
+    id: casita_initializing
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: https://raw.githubusercontent.com/esphome/wake-word-voice-assistants/main/error_box_illustrations/error-no-wifi.png
+    id: error_no_wifi
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+  - file: https://raw.githubusercontent.com/esphome/wake-word-voice-assistants/main/error_box_illustrations/error-no-ha.png
+    id: error_no_ha
+    resize: 320x240
+    type: RGB
+    transparency: alpha_channel
+
+font:
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 300
+      italic: true
+    id: font_request
+    size: 15
+    glyphsets:
+      - ${font_glyphsets}
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 300
+    id: font_response
+    size: 15
+    glyphsets:
+      - ${font_glyphsets}
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 400
+    id: font_header_small
+    size: 16
+    glyphsets:
+      - ${font_glyphsets}
+
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 300
+    id: font_timer
+    size: 30
+    glyphsets:
+      - ${font_glyphsets}
+
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 600
+    id: font_clock
+    size: 86
+    glyphsets:
+      - ${font_glyphsets}
+
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 400
+    id: font_bottom
+    size: 24
+    glyphsets:
+      - ${font_glyphsets}
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 400
+    id: font_ampm
+    size: 20
+    glyphsets:
+      - ${font_glyphsets}
+
+  - file: https://unpkg.com/@mdi/font@7.3.67/fonts/materialdesignicons-webfont.ttf
+    id: font_mdi
+    size: 26
+    glyphs:
+      - "󰈸"  # mdi:fire (F0238)
+      - "󰜗"  # mdi:snowflake (F0717)
+      - "\U000F156D"  # mdi:sofa-outline (F156D)
+      - "\U000F1061"  # mdi:table-chair (F1061)
+      - "\U000F0B7C"  # mdi:chef-hat (F0B7C)
+
+
+
+  - file:
+      type: gfonts
+      family: ${font_family}
+      weight: 700
+    id: font_header_bold
+    size: 18
+    glyphsets:
+      - ${font_glyphsets}
+
+text_sensor:
+  - platform: homeassistant
+    id: hvac_action
+    entity_id: ${thermostat_entity}
+    attribute: hvac_action
+    internal: true
+
+  - platform: version
+    name: Firmware
+    hide_timestamp: true
+
+  - id: text_request
+    platform: template
+    on_value:
+      lambda: |-
+        if(id(text_request).state.length()>32) {
+          std::string name = id(text_request).state.c_str();
+          std::string truncated = esphome::str_truncate(name.c_str(),31);
+          id(text_request).state = (truncated+"...").c_str();
+          }
+
+  - id: text_response
+    platform: template
+    on_value:
+      lambda: |-
+        if(id(text_response).state.length()>32) {
+          std::string name = id(text_response).state.c_str();
+          std::string truncated = esphome::str_truncate(name.c_str(),31);
+          id(text_response).state = (truncated+"...").c_str();
+          }
+
+color:
+  - id: idle_color
+    hex: ${idle_illustration_background_color}
+  - id: listening_color
+    hex: ${listening_illustration_background_color}
+  - id: thinking_color
+    hex: ${thinking_illustration_background_color}
+  - id: replying_color
+    hex: ${replying_illustration_background_color}
+  - id: loading_color
+    hex: ${loading_illustration_background_color}
+  - id: error_color
+    hex: ${error_illustration_background_color}
+  - id: active_timer_color
+    hex: "26ed3a"
+  - id: paused_timer_color
+    hex: "3b89e3"
+
+spi:
+  - id: spi_bus
+    clk_pin: 7
+    mosi_pin: 6
+
+display:
+  - platform: ili9xxx
+    id: s3_box_lcd
+    model: S3BOX
+    invert_colors: false
+    data_rate: 40MHz
+    cs_pin: 5
+    dc_pin: 4
+    reset_pin:
+      number: 48
+      inverted: true
+    update_interval: never
+    pages:
+      - id: idle_page
+        lambda: |-
+          it.fill(id(idle_color));
+          // Accent lines (low cost)
+
+          Color accent = id(ui_theme_on) ? Color(id(ui_theme_r), id(ui_theme_g), id(ui_theme_b)) : Color(255,255,255);
+          Color on_col = Color(255, 180, 0);          // amber (high contrast)
+          Color on_outer = Color(160, 90, 0);
+          Color btn_bg = Color(0, 0, 60);           // dark backing for contrast
+
+          // Top status strip
+          // Header: Indoor Temp (left) | HVAC (center) | Outdoor Temp (right)
+          // Indoor / Outdoor temps use the theme accent color; HVAC icon uses fixed state colors.
+          Color hvac_heat = Color(255, 0, 0);      // red
+          Color hvac_cool = Color(0, 120, 255);   // blue
+
+          // Left: Indoor Temp  67°
+          if (!isnan(id(avg_indoor_temp).state)) {
+            it.printf(2, 4, id(font_header_small), accent, TextAlign::TOP_LEFT, "Indoor Temp %.0f°", id(avg_indoor_temp).state);
+          } else {
+            it.print(2, 4, id(font_header_small), accent, TextAlign::TOP_LEFT, "Indoor Temp --°");
+          }
+
+          // Right: Outdoor Temp  31°
+          if (!isnan(id(outdoor_temp).state)) {
+            it.printf(319, 4, id(font_header_small), accent, TextAlign::TOP_RIGHT, "Outdoor Temp %.0f°", id(outdoor_temp).state);
+          } else {
+            it.print(319, 4, id(font_header_small), accent, TextAlign::TOP_RIGHT, "Outdoor Temp --°");
+          }
+
+          // Center: HVAC icon (only when running)
+          const char* hvac_glyph = "";
+          Color hvac_col = accent;
+          if (id(hvac_action).has_state()) {
+            const std::string action = id(hvac_action).state.c_str();
+            if (action == "heating") { hvac_glyph = "\U000F0238"; hvac_col = hvac_heat; }
+            else if (action == "cooling") { hvac_glyph = "\U000F0717"; hvac_col = hvac_cool; }
+          }
+          if (hvac_glyph[0] != '\0') {
+            it.print(160, 4, id(font_mdi), hvac_col, TextAlign::TOP_CENTER, hvac_glyph);
+          }
+
+
+          // ---------- Utilities (Electric / Gas / Water) ----------
+          // NOTE: HVAC strip above is preserved exactly as-is.
+          // Layout below is intentionally simple while gas/water are placeholders.
+
+          // Divider under the top strip
+          it.line(12, 30, 307, 30, Color(0xC9, 0xC6, 0xBB));
+
+          // Helper to format power as W or kW
+          auto fmt_w_or_kw = [&](float w, char* out, size_t n) {
+            if (isnan(w)) { snprintf(out, n, "--"); return; }
+            if (w < 1000.0f) snprintf(out, n, "%.0f W", w);
+            else snprintf(out, n, "%.2f kW", w / 1000.0f);
+          };
+
+          const Color ink = Color(0x11, 0x11, 0x11);
+          const Color div = Color(0xC9, 0xC6, 0xBB);
+
+          // Read HA values (Emporia)
+          float elec_now_w = id(emporia_power_w).state;
+          float elec_today = id(emporia_energy_today_kwh).state;
+          float elec_month = id(emporia_energy_month_kwh).state;
+
+          // Placeholder gas/water values for now
+          float gas_now = id(demo_gas_flow).state;
+          float gas_month = id(demo_gas_month_ccf).state;
+          float water_now = id(demo_water_flow).state;
+          float water_month = id(demo_water_month_gal).state;
+
+          int y = 40;
+          // ELECTRIC
+          it.print(12, y, id(font_header_bold), ink, "ELECTRIC");
+          {
+            char pbuf[24];
+            fmt_w_or_kw(elec_now_w, pbuf, sizeof(pbuf));
+            it.print(12, y + 20, id(font_header_small), ink, "Now");
+            it.printf(90, y + 20, id(font_header_small), ink, "%s", pbuf);
+            it.print(12, y + 40, id(font_header_small), ink, "Today");
+            if (!isnan(elec_today)) it.printf(90, y + 40, id(font_header_small), ink, "%.2f kWh", elec_today);
+            else it.print(90, y + 40, id(font_header_small), ink, "--");
+            it.print(12, y + 60, id(font_header_small), ink, "Month");
+            if (!isnan(elec_month)) it.printf(90, y + 60, id(font_header_small), ink, "%.1f kWh", elec_month);
+            else it.print(90, y + 60, id(font_header_small), ink, "--");
+          }
+          it.line(12, y + 84, 307, y + 84, div);
+
+          // GAS
+          y = y + 94;
+          it.print(12, y, id(font_header_bold), ink, "GAS");
+          it.print(12, y + 20, id(font_header_small), ink, "Now");
+          it.printf(90, y + 20, id(font_header_small), ink, "%.2f", gas_now);
+          it.print(12, y + 40, id(font_header_small), ink, "Month");
+          it.printf(90, y + 40, id(font_header_small), ink, "%.1f CCF", gas_month);
+          it.line(12, y + 64, 307, y + 64, div);
+
+          // WATER
+          y = y + 74;
+          it.print(12, y, id(font_header_bold), ink, "WATER");
+          it.print(12, y + 20, id(font_header_small), ink, "Now");
+          it.printf(90, y + 20, id(font_header_small), ink, "%.1f", water_now);
+          it.print(12, y + 40, id(font_header_small), ink, "Month");
+          it.printf(90, y + 40, id(font_header_small), ink, "%.0f gal", water_month);
+
+          // Stop here so we don't draw the old dashboard content below.
+          return;
+
+      - id: listening_page
+        lambda: |-
+          it.fill(id(listening_color));
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_listening), ImageAlign::CENTER);
+          id(draw_timer_timeline).execute();
+      - id: thinking_page
+        lambda: |-
+          it.fill(id(thinking_color));
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_thinking), ImageAlign::CENTER);
+          id(draw_timer_timeline).execute();
+      - id: replying_page
+        lambda: |-
+          it.fill(id(replying_color));
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_replying), ImageAlign::CENTER);
+          id(draw_timer_timeline).execute();
+      - id: timer_finished_page
+        lambda: |-
+          it.fill(id(idle_color));
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_timer_finished), ImageAlign::CENTER);
+      - id: error_page
+        lambda: |-
+          it.fill(id(error_color));
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_error), ImageAlign::CENTER);
+      - id: no_ha_page
+        lambda: |-
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(error_no_ha), ImageAlign::CENTER);
+      - id: no_wifi_page
+        lambda: |-
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(error_no_wifi), ImageAlign::CENTER);
+      - id: initializing_page
+        lambda: |-
+          it.fill(id(loading_color));
+          it.image((it.get_width() / 2), (it.get_height() / 2), id(casita_initializing), ImageAlign::CENTER);
+      - id: muted_page
+        lambda: |-
+          it.fill(Color::BLACK);
+          id(draw_timer_timeline).execute();
+          id(draw_active_timer_widget).execute();
