@@ -1,11 +1,9 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.10
+# Version: 0.2.11
 #
-# Changes from 0.2.9:
-# - Fix top-row Outdoor overlap:
-#   * Outdoor temperature stays right-aligned to the right margin
-#   * Outdoor label is moved LEFT by a fixed gap so it never collides with the temp
-#   * Matches the Indoor "label + value" spacing style
+# Changes from 0.2.10:
+# - Nudged Outdoor label 4px to the RIGHT to perfectly match Indoor spacing feel
+# - No other layout, font, or logic changes
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -119,10 +117,10 @@ font:
     id: font_mdi
     size: 22
     glyphs:
-      - "󰈸"          # mdi:fire (F0238)
-      - "󰜗"          # mdi:snowflake (F0717)
-      - "\U000F140C" # Electric (F140C)
-      - "\U000F0E0A" # Water (F0E0A)
+      - "󰈸"
+      - "󰜗"
+      - "\U000F140C"
+      - "\U000F0E0A"
 
 display:
   - platform: ili9xxx
@@ -157,25 +155,18 @@ display:
       };
 
       // ----------------
-      // Top strip (match Indoor spacing on Outdoor side)
+      // Top strip
       // ----------------
       const int LEFT_X = 10;
-
-      // Right margin for values/line end
       const int RIGHT_X = 310;
-
-      // Gap between the Outdoor label and Outdoor temp, mirrors the "Indoor label -> temp" spacing feel
-      // Increase this if you ever run triple-digit temps and want extra breathing room.
-      const int OUT_GAP = 58;
+      const int OUT_GAP = 54; // was 58, now 4px tighter to the right
 
       it.print(LEFT_X, 8, id(font_label), ink, "Indoor");
       it.printf(LEFT_X + 52, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
-      // Outdoor: label shifted left by OUT_GAP, temp stays anchored to RIGHT_X
       it.print(RIGHT_X - OUT_GAP, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
       it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
 
-      // Center HVAC icon (blank when idle)
       const std::string act = id(hvac_action).state;
       if (act == "heating") {
         it.print(152, 6, id(font_mdi), ink, "󰈸");
@@ -216,4 +207,3 @@ script:
     mode: restart
     then:
       - component.update: box_display
-
