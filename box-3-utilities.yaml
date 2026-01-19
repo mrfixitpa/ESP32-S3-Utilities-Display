@@ -1,27 +1,38 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.1.6
+# Version: 0.2.0
 #
 # PURE PACKAGE FILE (safe for `packages:` inclusion)
-# Fixes:
-# - Indoor/Outdoor sensor entity_ids matched to the original working config
-# - HVAC action read from climate attribute (original behavior)
-# - Layout tightened so Gas/Water are visible on 320x240
-# - Redraw on sensor changes + safety refresh
+#
+# UI:
+# - E‑ink/paper look
+# - Top HVAC strip (Indoor / Outdoor / HVAC action)
+# - Three rounded “pill” tiles: Electricity / Gas / Water
+#   Each shows: Now + Month
+#
+# Notes:
+# - Touch/backlight live in the WRAPPER (device YAML), not here.
+# - Gas/Water are placeholders for now (easy to swap to real sensors later).
 
 substitutions:
   idle_color: 0xA7D8FF
   thermostat_entity: climate.ecobee_thermostat
 
+# Required for ili9xxx
 spi:
   clk_pin: GPIO7
   mosi_pin: GPIO6
 
+# Safety refresh (plus on_value triggers below)
 interval:
   - interval: 30s
     then:
       - script.execute: request_draw
 
+# -----------------
+# Home Assistant Sensors
+# -----------------
 sensor:
+  # HVAC temps (matches your original working names)
   - platform: homeassistant
     id: avg_indoor_temp
     entity_id: sensor.average_indoor_temperature
@@ -36,16 +47,10 @@ sensor:
     on_value:
       - script.execute: request_draw
 
+  # Electric (Emporia)
   - platform: homeassistant
     id: electric_power_w
     entity_id: sensor.house_electric_meter_power_minute_average
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: electric_energy_today
-    entity_id: sensor.house_electric_meter_energy_today
     internal: true
     on_value:
       - script.execute: request_draw
@@ -57,7 +62,20 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # Gas / Water placeholders (for now)
+  # Gas placeholders (swap to your real ESP gas sensors later)
+  - platform: template
+    id: gas_now_flow
+    lambda: |-
+      static int t = 0;
+      t++;
+      // Little “pulse” so you can see it updating
+      if ((t % 25) < 3) return 0.12f;
+      return 0.00f;
+    update_interval: 3s
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
   - platform: template
     id: gas_month_ccf
     lambda: |-
@@ -65,6 +83,19 @@ sensor:
       v += 0.01;
       return v;
     update_interval: 10s
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  # Water placeholders
+  - platform: template
+    id: water_now_flow
+    lambda: |-
+      static int t = 0;
+      t++;
+      if ((t % 35) < 4) return 0.7f;
+      return 0.0f;
+    update_interval: 3s
     internal: true
     on_value:
       - script.execute: request_draw
@@ -81,6 +112,7 @@ sensor:
       - script.execute: request_draw
 
 text_sensor:
+  # HVAC action from climate attribute (idle/heating/cooling…)
   - platform: homeassistant
     id: hvac_action
     entity_id: ${thermostat_entity}
@@ -89,28 +121,43 @@ text_sensor:
     on_value:
       - script.execute: request_draw
 
+# -----------------
+# Fonts
+# -----------------
 font:
+  # Text
   - file:
       type: gfonts
       family: Figtree
       weight: 600
     id: font_title
-    size: 24
+    size: 18
 
   - file:
       type: gfonts
       family: Figtree
       weight: 500
     id: font_label
-    size: 18
+    size: 14
 
   - file:
       type: gfonts
       family: Figtree
       weight: 700
     id: font_value
-    size: 26
+    size: 20
 
+  # Icons (Material Symbols; uses ligatures like "bolt", "water_drop")
+  - file:
+      type: gfonts
+      family: Material Symbols Outlined
+      weight: 400
+    id: font_icon
+    size: 22
+
+# -----------------
+# Display
+# -----------------
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -123,61 +170,113 @@ display:
     invert_colors: false
     update_interval: never
     lambda: |-
-      const Color paper = Color(0xF3, 0xF1, 0xE7);
-      const Color ink   = Color(0x11, 0x11, 0x11);
-      const Color div   = Color(0xC9, 0xC6, 0xBB);
+      // Paper/ink palette
+      const Color paper   = Color(0xF3, 0xF1, 0xE7);
+      const Color ink     = Color(0x11, 0x11, 0x11);
+      const Color muted   = Color(0x55, 0x55, 0x55);
+      const Color border  = Color(0xC9, 0xC6, 0xBB);
+      const Color tile_bg = Color(0xF9, 0xF7, 0xEF);
 
       it.fill(paper);
 
-      // --- TOP STRIP (HVAC) ---
-      it.print(10, 6, id(font_label), ink, "Indoor");
-      if (!isnan(id(avg_indoor_temp).state)) {
-        it.printf(10, 26, id(font_value), ink, "%.1f°", id(avg_indoor_temp).state);
-      } else {
-        it.print(10, 26, id(font_value), ink, "--");
-      }
+      // ---- Helpers: rounded rect (filled + outline) ----
+      auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+        it.filled_rectangle(x + r, y, w - 2*r, h, c);
+        it.filled_rectangle(x, y + r, r, h - 2*r, c);
+        it.filled_rectangle(x + w - r, y + r, r, h - 2*r, c);
+        it.filled_circle(x + r,          y + r,          r, c);
+        it.filled_circle(x + w - r - 1,  y + r,          r, c);
+        it.filled_circle(x + r,          y + h - r - 1,  r, c);
+        it.filled_circle(x + w - r - 1,  y + h - r - 1,  r, c);
+      };
 
-      it.print(120, 6, id(font_label), ink, "Outdoor");
-      if (!isnan(id(outdoor_temp).state)) {
-        it.printf(120, 26, id(font_value), ink, "%.1f°", id(outdoor_temp).state);
-      } else {
-        it.print(120, 26, id(font_value), ink, "--");
-      }
+      auto stroke_round = [&](int x, int y, int w, int h, int r, Color c) {
+        it.line(x + r, y, x + w - r - 1, y, c);
+        it.line(x + r, y + h - 1, x + w - r - 1, y + h - 1, c);
+        it.line(x, y + r, x, y + h - r - 1, c);
+        it.line(x + w - 1, y + r, x + w - 1, y + h - r - 1, c);
+        it.circle(x + r,         y + r,         r, c);
+        it.circle(x + w - r - 1, y + r,         r, c);
+        it.circle(x + r,         y + h - r - 1, r, c);
+        it.circle(x + w - r - 1, y + h - r - 1, r, c);
+      };
 
-      it.print(240, 6, id(font_label), ink, "HVAC");
-      it.print(240, 26, id(font_label), ink, id(hvac_action).state.c_str());
+      // ---- Top HVAC strip ----
+      it.print(10, 6, id(font_label), muted, "Indoor");
+      if (!isnan(id(avg_indoor_temp).state)) it.printf(10, 24, id(font_value), ink, "%.1f°", id(avg_indoor_temp).state);
+      else it.print(10, 24, id(font_value), ink, "--");
 
-      it.line(10, 58, 310, 58, div);
+      it.print(118, 6, id(font_label), muted, "Outdoor");
+      if (!isnan(id(outdoor_temp).state)) it.printf(118, 24, id(font_value), ink, "%.1f°", id(outdoor_temp).state);
+      else it.print(118, 24, id(font_value), ink, "--");
 
-      // --- UTILITIES ---
-      it.print(10, 64, id(font_title), ink, "UTILITIES");
+      it.print(228, 6, id(font_label), muted, "HVAC");
+      it.print(228, 26, id(font_label), ink, id(hvac_action).state.c_str());
 
-      // Electric (tighter vertical spacing)
-      it.print(10, 94, id(font_label), ink, "Electric");
-      if (!isnan(id(electric_power_w).state)) {
-        it.printf(10, 114, id(font_label), ink, "Now: %.0f W", id(electric_power_w).state);
-      } else {
-        it.print(10, 114, id(font_label), ink, "Now: -- W");
-      }
-      if (!isnan(id(electric_energy_today).state)) {
-        it.printf(10, 132, id(font_label), ink, "Today: %.2f kWh", id(electric_energy_today).state);
-      } else {
-        it.print(10, 132, id(font_label), ink, "Today: -- kWh");
-      }
-      if (!isnan(id(electric_energy_month).state)) {
-        it.printf(10, 150, id(font_label), ink, "Month: %.1f kWh", id(electric_energy_month).state);
-      } else {
-        it.print(10, 150, id(font_label), ink, "Month: -- kWh");
-      }
+      it.line(10, 54, 310, 54, border);
 
-      it.line(10, 168, 310, 168, div);
+      // ---- Tile layout ----
+      const int tx = 10;
+      const int tw = 300;
+      const int th = 52;
+      const int tr = 12;
+      const int gap = 10;
 
-      // Gas / Water (now visible)
-      it.print(10, 180, id(font_label), ink, "Gas Month");
-      it.printf(170, 180, id(font_label), ink, "%.1f CCF", id(gas_month_ccf).state);
+      int y = 64;
 
-      it.print(10, 204, id(font_label), ink, "Water Month");
-      it.printf(170, 204, id(font_label), ink, "%.0f gal", id(water_month_gal).state);
+      auto fmt_w_or_kw = [&](float w, char* out, size_t n) {
+        if (isnan(w)) { snprintf(out, n, "--"); return; }
+        if (w < 1000.0f) snprintf(out, n, "%.0f W", w);
+        else snprintf(out, n, "%.2f kW", w / 1000.0f);
+      };
+
+      auto draw_tile = [&](int x, int y, const char* icon, const char* title,
+                           const char* now_label, const char* now_value,
+                           const char* month_label, const char* month_value) {
+        fill_round(x, y, tw, th, tr, tile_bg);
+        stroke_round(x, y, tw, th, tr, border);
+
+        // icon + title
+        it.print(x + 12, y + 8, id(font_icon), ink, icon);
+        it.print(x + 44, y + 8, id(font_title), ink, title);
+
+        // labels/values
+        it.print(x + 44, y + 30, id(font_label), muted, now_label);
+        it.print(x + 96, y + 30, id(font_label), ink, now_value);
+
+        it.print(x + 172, y + 30, id(font_label), muted, month_label);
+        it.print(x + 236, y + 30, id(font_label), ink, month_value);
+      };
+
+      // ELECTRICITY
+      char e_now[24];
+      fmt_w_or_kw(id(electric_power_w).state, e_now, sizeof(e_now));
+
+      char e_month[24];
+      if (!isnan(id(electric_energy_month).state)) snprintf(e_month, sizeof(e_month), "%.1f kWh", id(electric_energy_month).state);
+      else snprintf(e_month, sizeof(e_month), "-- kWh");
+
+      draw_tile(tx, y, "bolt", "Electricity", "Now", e_now, "Month", e_month);
+
+      // GAS
+      y += th + gap;
+      char g_now[24];
+      snprintf(g_now, sizeof(g_now), "%.2f", id(gas_now_flow).state);
+
+      char g_month[24];
+      snprintf(g_month, sizeof(g_month), "%.1f CCF", id(gas_month_ccf).state);
+
+      draw_tile(tx, y, "local_fire_department", "Gas", "Now", g_now, "Month", g_month);
+
+      // WATER
+      y += th + gap;
+      char w_now[24];
+      snprintf(w_now, sizeof(w_now), "%.1f", id(water_now_flow).state);
+
+      char w_month[24];
+      snprintf(w_month, sizeof(w_month), "%.0f gal", id(water_month_gal).state);
+
+      draw_tile(tx, y, "water_drop", "Water", "Now", w_now, "Month", w_month);
 
 script:
   - id: request_draw
