@@ -1,20 +1,9 @@
 # Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.0
+# Version: 0.2.1
 #
 # PURE PACKAGE FILE (safe for `packages:` inclusion)
-#
-# UI:
-# - E‑ink/paper look
-# - Top HVAC strip (Indoor / Outdoor / HVAC action)
-# - Three rounded “pill” tiles: Electricity / Gas / Water
-#   Each shows: Now + Month
-#
-# Notes:
-# - Touch/backlight live in the WRAPPER (device YAML), not here.
-# - Gas/Water are placeholders for now (easy to swap to real sensors later).
 
 substitutions:
-  idle_color: 0xA7D8FF
   thermostat_entity: climate.ecobee_thermostat
 
 # Required for ili9xxx
@@ -22,17 +11,14 @@ spi:
   clk_pin: GPIO7
   mosi_pin: GPIO6
 
-# Safety refresh (plus on_value triggers below)
+# Safety refresh (plus on_value triggers)
 interval:
   - interval: 30s
     then:
       - script.execute: request_draw
 
-# -----------------
-# Home Assistant Sensors
-# -----------------
 sensor:
-  # HVAC temps (matches your original working names)
+  # HVAC temps
   - platform: homeassistant
     id: avg_indoor_temp
     entity_id: sensor.average_indoor_temperature
@@ -62,13 +48,12 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # Gas placeholders (swap to your real ESP gas sensors later)
+  # Gas placeholders (swap later)
   - platform: template
     id: gas_now_flow
     lambda: |-
       static int t = 0;
       t++;
-      // Little “pulse” so you can see it updating
       if ((t % 25) < 3) return 0.12f;
       return 0.00f;
     update_interval: 3s
@@ -112,7 +97,7 @@ sensor:
       - script.execute: request_draw
 
 text_sensor:
-  # HVAC action from climate attribute (idle/heating/cooling…)
+  # HVAC action from climate attribute (heating/cooling/idle)
   - platform: homeassistant
     id: hvac_action
     entity_id: ${thermostat_entity}
@@ -121,43 +106,53 @@ text_sensor:
     on_value:
       - script.execute: request_draw
 
-# -----------------
-# Fonts
-# -----------------
 font:
-  # Text
   - file:
       type: gfonts
       family: Figtree
       weight: 600
-    id: font_title
+    id: font_top_label
+    size: 16
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_top_value
+    size: 18
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_tile_title
     size: 18
 
   - file:
       type: gfonts
       family: Figtree
       weight: 500
-    id: font_label
+    id: font_tile_label
     size: 14
 
   - file:
       type: gfonts
       family: Figtree
       weight: 700
-    id: font_value
-    size: 20
+    id: font_tile_value
+    size: 18
 
-  # Icons (Material Symbols; uses ligatures like "bolt", "water_drop")
-  - file:
-      type: gfonts
-      family: Material Symbols Outlined
-      weight: 400
-    id: font_icon
-    size: 22
+  # MDI font (same approach as your original file — explicit glyphs)
+  - file: https://unpkg.com/@mdi/font@7.3.67/fonts/materialdesignicons-webfont.ttf
+    id: font_mdi
+    size: 24
+    glyphs:
+      - "\U000F0238"  # mdi:fire
+      - "\U000F0717"  # mdi:snowflake
+      - "\U000F140B"  # mdi:lightning-bolt
+      - "\U000F0647"  # mdi:gas-cylinder
+      - "\U000F058C"  # mdi:water
 
-# -----------------
-# Display
-# -----------------
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -170,12 +165,15 @@ display:
     invert_colors: false
     update_interval: never
     lambda: |-
-      // Paper/ink palette
-      const Color paper   = Color(0xF3, 0xF1, 0xE7);
-      const Color ink     = Color(0x11, 0x11, 0x11);
-      const Color muted   = Color(0x55, 0x55, 0x55);
-      const Color border  = Color(0xC9, 0xC6, 0xBB);
-      const Color tile_bg = Color(0xF9, 0xF7, 0xEF);
+      // Paper / ink palette
+      const Color paper  = Color(0xF3, 0xF1, 0xE7);
+      const Color ink    = Color(0x11, 0x11, 0x11);
+      const Color muted  = Color(0x55, 0x55, 0x55);
+      const Color border = Color(0xAA, 0xA7, 0x9E);
+      const Color white  = Color(0xFF, 0xFF, 0xFF);
+
+      const Color hvac_heat = Color(255, 0, 0);
+      const Color hvac_cool = Color(0, 140, 255);
 
       it.fill(paper);
 
@@ -201,28 +199,43 @@ display:
         it.circle(x + w - r - 1, y + h - r - 1, r, c);
       };
 
-      // ---- Top HVAC strip ----
-      it.print(10, 6, id(font_label), muted, "Indoor");
-      if (!isnan(id(avg_indoor_temp).state)) it.printf(10, 24, id(font_value), ink, "%.1f°", id(avg_indoor_temp).state);
-      else it.print(10, 24, id(font_value), ink, "--");
+      // ---- Top strip (compact) ----
+      // Indoor (left)
+      it.print(10, 8, id(font_top_label), muted, "Indoor");
+      if (!isnan(id(avg_indoor_temp).state)) {
+        it.printf(70, 8, id(font_top_value), ink, "%.1f°", id(avg_indoor_temp).state);
+      } else {
+        it.print(70, 8, id(font_top_value), ink, "--");
+      }
 
-      it.print(118, 6, id(font_label), muted, "Outdoor");
-      if (!isnan(id(outdoor_temp).state)) it.printf(118, 24, id(font_value), ink, "%.1f°", id(outdoor_temp).state);
-      else it.print(118, 24, id(font_value), ink, "--");
+      // Outdoor (right)
+      it.print(210, 8, id(font_top_label), muted, "Outdoor");
+      if (!isnan(id(outdoor_temp).state)) {
+        it.printf(282, 8, id(font_top_value), ink, "%.1f°", id(outdoor_temp).state);
+      } else {
+        it.print(282, 8, id(font_top_value), ink, "--");
+      }
 
-      it.print(228, 6, id(font_label), muted, "HVAC");
-      it.print(228, 26, id(font_label), ink, id(hvac_action).state.c_str());
+      // HVAC icon (center) — ONLY when heating/cooling
+      if (id(hvac_action).has_state()) {
+        const std::string action = id(hvac_action).state.c_str();
+        if (action == "heating") {
+          it.print(160, 8, id(font_mdi), hvac_heat, TextAlign::TOP_CENTER, "\U000F0238");
+        } else if (action == "cooling") {
+          it.print(160, 8, id(font_mdi), hvac_cool, TextAlign::TOP_CENTER, "\U000F0717");
+        }
+      }
 
-      it.line(10, 54, 310, 54, border);
+      it.line(10, 38, 310, 38, border);
 
-      // ---- Tile layout ----
+      // ---- Pill tiles ----
       const int tx = 10;
       const int tw = 300;
-      const int th = 52;
-      const int tr = 12;
+      const int th = 56;
+      const int tr = 14;
       const int gap = 10;
 
-      int y = 64;
+      int y = 48;
 
       auto fmt_w_or_kw = [&](float w, char* out, size_t n) {
         if (isnan(w)) { snprintf(out, n, "--"); return; }
@@ -230,25 +243,24 @@ display:
         else snprintf(out, n, "%.2f kW", w / 1000.0f);
       };
 
-      auto draw_tile = [&](int x, int y, const char* icon, const char* title,
-                           const char* now_label, const char* now_value,
-                           const char* month_label, const char* month_value) {
-        fill_round(x, y, tw, th, tr, tile_bg);
-        stroke_round(x, y, tw, th, tr, border);
+      auto draw_tile = [&](int y, const char* title, const char* icon_glyph,
+                           const char* now_value, const char* month_value) {
+        fill_round(tx, y, tw, th, tr, white);
+        stroke_round(tx, y, tw, th, tr, border);
 
         // icon + title
-        it.print(x + 12, y + 8, id(font_icon), ink, icon);
-        it.print(x + 44, y + 8, id(font_title), ink, title);
+        it.print(tx + 14, y + 14, id(font_mdi), ink, icon_glyph);
+        it.print(tx + 48, y + 10, id(font_tile_title), ink, title);
 
-        // labels/values
-        it.print(x + 44, y + 30, id(font_label), muted, now_label);
-        it.print(x + 96, y + 30, id(font_label), ink, now_value);
+        // now / month
+        it.print(tx + 48, y + 32, id(font_tile_label), muted, "Now");
+        it.print(tx + 90, y + 30, id(font_tile_value), ink, now_value);
 
-        it.print(x + 172, y + 30, id(font_label), muted, month_label);
-        it.print(x + 236, y + 30, id(font_label), ink, month_value);
+        it.print(tx + 176, y + 32, id(font_tile_label), muted, "Month");
+        it.print(tx + 232, y + 30, id(font_tile_value), ink, month_value);
       };
 
-      // ELECTRICITY
+      // Electricity
       char e_now[24];
       fmt_w_or_kw(id(electric_power_w).state, e_now, sizeof(e_now));
 
@@ -256,9 +268,9 @@ display:
       if (!isnan(id(electric_energy_month).state)) snprintf(e_month, sizeof(e_month), "%.1f kWh", id(electric_energy_month).state);
       else snprintf(e_month, sizeof(e_month), "-- kWh");
 
-      draw_tile(tx, y, "bolt", "Electricity", "Now", e_now, "Month", e_month);
+      draw_tile(y, "Electricity", "\U000F140B", e_now, e_month);
 
-      // GAS
+      // Gas
       y += th + gap;
       char g_now[24];
       snprintf(g_now, sizeof(g_now), "%.2f", id(gas_now_flow).state);
@@ -266,9 +278,9 @@ display:
       char g_month[24];
       snprintf(g_month, sizeof(g_month), "%.1f CCF", id(gas_month_ccf).state);
 
-      draw_tile(tx, y, "local_fire_department", "Gas", "Now", g_now, "Month", g_month);
+      draw_tile(y, "Gas", "\U000F0647", g_now, g_month);
 
-      // WATER
+      // Water
       y += th + gap;
       char w_now[24];
       snprintf(w_now, sizeof(w_now), "%.1f", id(water_now_flow).state);
@@ -276,7 +288,7 @@ display:
       char w_month[24];
       snprintf(w_month, sizeof(w_month), "%.0f gal", id(water_month_gal).state);
 
-      draw_tile(tx, y, "water_drop", "Water", "Now", w_now, "Month", w_month);
+      draw_tile(y, "Water", "\U000F058C", w_now, w_month);
 
 script:
   - id: request_draw
