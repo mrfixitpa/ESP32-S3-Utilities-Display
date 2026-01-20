@@ -1,1 +1,79 @@
+# Example ESPHome Configuration
+# ESP32-S3 Utilities Display
+#
+# This file demonstrates how to consume the box-3-utilities.yaml package
+# using substitutions and minimal device-specific configuration.
+#
+# Version reference: Utilities package v0.2.11+
 
+substitutions:
+  name: box3-utilities-display
+  friendly_name: Box-3 Utilities Display
+
+esphome:
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: 2025.5.0
+  on_boot:
+    priority: 600
+    then:
+      - light.turn_on:
+          id: screen_backlight
+          brightness: 100%
+      - script.execute: request_draw
+
+esp32:
+  board: esp32s3box
+  framework:
+    type: arduino
+
+# -----------------------------
+# Utilities Display Package
+# -----------------------------
+packages:
+  - github://mrfixitpa/ESP32-S3-Utilities-Display/box-3-utilities.yaml@main
+
+logger:
+
+ota:
+  - platform: esphome
+
+api:
+  encryption:
+    key: your api key here
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  # use_address: xx.xx.xx.xx. (uncomment if you want a dedicated ip for your ESP21-S3-Box-3)
+
+# -----------------------------
+# Backlight Control
+# -----------------------------
+output:
+  - platform: ledc
+    pin: GPIO47
+    id: backlight_pwm
+
+light:
+  - platform: monochromatic
+    id: screen_backlight
+    name: "${friendly_name} Screen Backlight"
+    output: backlight_pwm
+    restore_mode: ALWAYS_ON
+    default_transition_length: 250ms
+
+# -----------------------------
+# Touchscreen (tap = refresh)
+# -----------------------------
+i2c:
+  scl: GPIO18
+  sda: GPIO8
+
+touchscreen:
+  - platform: gt911
+    id: box_touch
+    interrupt_pin: GPIO3
+    on_touch:
+      then:
+        - script.execute: request_draw
