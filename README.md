@@ -1,3 +1,9 @@
+![ESPHome](https://img.shields.io/badge/ESPHome-2025.x-blue)
+![Hardware](https://img.shields.io/badge/Hardware-ESP32--S3--Box--3-black)
+![Display](https://img.shields.io/badge/Display-ILI9XXX-lightgrey)
+![Status](https://img.shields.io/badge/Status-Ongoing-yellow)
+
+
 # ESP32-S3 Utilities Display
 
 A clean, high-contrast **utilities dashboard** for the **ESP32-S3-Box-3**, built with ESPHome and optimized for always-on visibility.
@@ -21,9 +27,19 @@ A clean, high-contrast **utilities dashboard** for the **ESP32-S3-Box-3**, built
 
 ---
 
+## 🚧 Project Status
+
+This is an **ongoing project**, and **suggestions, feedback, and ideas are always welcome**.
+
+- **Electricity data** is fully live and based on real sensors.
+- **Gas and Water data** are currently **placeholder / dummy values** while hardware, integrations, and validation are still being finalized.
+- Layout, fonts, and spacing are considered **stable**, but features will continue to evolve.
+
+---
+
 ## Overview
 
-The display shows real-time household utility information in a **black-and-white, e‑ink–style layout** designed to be readable at a distance.
+The display shows real-time household utility information in a **black-and-white, e-ink–style layout** designed to be readable at a distance.
 
 ### Top Row
 - **Indoor temperature** (left)
@@ -34,9 +50,9 @@ The display shows real-time household utility information in a **black-and-white
   - Blank when idle
 
 ### Main Area
-- **Electricity** – current usage and monthly total
-- **Gas** – current usage and monthly total
-- **Water** – current usage and monthly total
+- **Electricity** – current usage and monthly total *(live)*
+- **Gas** – current usage and monthly total *(in progress)*
+- **Water** – current usage and monthly total *(in progress)*
 
 ---
 
@@ -75,4 +91,5 @@ The display shows real-time household utility information in a **black-and-white
 ---
 
 ## Status
-**Stable – v0.2.11**
+**Stable layout – v0.2.11**  
+**Features: evolving**
