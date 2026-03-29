@@ -1,13 +1,12 @@
-# Box-3 Utilities Display (ESPHome Package)
-# Version: 0.2.12
+# Version: 0.2.13
 #
-# Changes from 0.2.11:
-# - Replaced dummy water sensors with real Home Assistant entities
-# - Added weekly water usage display
+# Changes from 0.2.12:
+# - Replaced live water flow (GPM) with daily usage
 # - Water card now shows:
-#   * Now (gpm)
+#   * Day (gal)
 #   * Week (gal)
 #   * Month (gal)
+# - Improved layout to prevent overflow and maintain card spacing
 # - No changes to electricity, gas, fonts, icons, or overall layout
 
 substitutions:
@@ -69,19 +68,9 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  # ----------------
-  # WATER (UPDATED)
-  # ----------------
   - platform: homeassistant
-    id: water_now_flow
-    entity_id: sensor.water_meter_flow_rate
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: water_month_gal
-    entity_id: sensor.monthly_water_usage
+    id: water_day_gal
+    entity_id: sensor.daily_water_usage
     internal: true
     on_value:
       - script.execute: request_draw
@@ -89,6 +78,13 @@ sensor:
   - platform: homeassistant
     id: water_week_gal
     entity_id: sensor.weekly_water_usage
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: water_month_gal
+    entity_id: sensor.monthly_water_usage
     internal: true
     on_value:
       - script.execute: request_draw
@@ -208,15 +204,14 @@ display:
       it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
       it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
 
-      // Water (UPDATED)
+      // Water
       y += h + 10;
       tile(10, y, 300, h, 14);
       it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
       it.print(44, y+10, id(font_title), ink, "Water");
-
-      it.printf(44, y+30, id(font_label), ink, "Now %.2f gpm", id(water_now_flow).state);
-      it.printf(44, y+44, id(font_label), ink, "Week %.0f gal", id(water_week_gal).state);
-      it.printf(170, y+44, id(font_label), ink, "Month %.0f gal", id(water_month_gal).state);
+      it.printf(44, y+34, id(font_label), ink, "Day %.0f gal", id(water_day_gal).state);
+      it.printf(170, y+26, id(font_label), ink, "Week %.0f gal", id(water_week_gal).state);
+      it.printf(170, y+40, id(font_label), ink, "Month %.0f gal", id(water_month_gal).state);
 
 script:
   - id: request_draw
