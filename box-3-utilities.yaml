@@ -211,11 +211,11 @@ display:
       it.print(44, y+10, id(font_title), ink, "Water");
 
       // Top-right
-      it.printf(170, y+12, id(font_label), ink, "Week %.0f gal", id(water_week_gal).state);
+      it.printf(170, y+12, id(font_label), ink, "Weekly:. %.0f gal", id(water_week_gal).state);
 
       // Bottom row
-      it.printf(44, y+36, id(font_label), ink, "Day %.0f gal", id(water_day_gal).state);
-      it.printf(170, y+36, id(font_label), ink, "Month %.0f gal", id(water_month_gal).state);
+      it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
+      it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
 
 script:
   - id: request_draw
