@@ -4,6 +4,26 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.2.13] - 2026-03-29
+
+### Changed
+- Replaced live water flow (GPM) with daily usage
+- Water card now displays:
+  - Day (gal)
+  - Week (gal)
+  - Month (gal)
+
+### Improvements
+- Fixed layout overflow issue on Water card
+- Improved spacing and alignment within existing pill design
+- Maintains clean, readable layout without increasing card size
+
+### Notes
+- Electricity and Gas sections unchanged
+- No changes to fonts, icons, or display structure
+
+---
+
 ## [0.2.12] - 2026-03-29
 
 ### Added
