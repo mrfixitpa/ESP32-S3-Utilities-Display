@@ -1,0 +1,35 @@
+# Release Notes – v0.2.13
+
+## Summary
+This release refines the Water utility card by replacing live flow data with daily usage and correcting layout issues for a cleaner, more useful display.
+
+---
+
+## What's Changed
+
+### 💧 Water Card Improvements
+- Replaced **live flow rate (GPM)** with **daily usage**
+- Added structured time-based layout:
+  - Day (gal)
+  - Week (gal)
+  - Month (gal)
+
+---
+
+## Improvements
+- Fixed overflow issue that pushed content outside the card
+- Better alignment and spacing within existing layout
+- More meaningful at-a-glance information
+
+---
+
+## No Changes
+- Electricity card (unchanged)
+- Gas card (still placeholder)
+- Fonts, icons, and overall design
+- Performance and refresh behavior
+
+---
+
+## Notes
+This change improves usability by prioritizing consistent, always-relevant data instead of intermittent live flow readings.
