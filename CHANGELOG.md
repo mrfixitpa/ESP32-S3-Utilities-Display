@@ -1,5 +1,33 @@
 # Changelog
 
+All notable changes to this project will be documented in this file.
+
+---
+
+## [0.2.12] - 2026-03-29
+
+### Added
+- Weekly water usage display on Water card
+
+### Changed
+- Replaced dummy water sensors with real Home Assistant entities
+- Water card now displays:
+  - Current flow rate (GPM)
+  - Weekly usage (gallons)
+  - Monthly usage (gallons)
+
+### Notes
+- No changes to layout, spacing, fonts, or other utility cards
+- Electricity and Gas sections remain unchanged
+
+---
+
+## [0.2.11] - Previous Release
+
+### Changed
+- Adjusted Outdoor temperature label spacing for visual alignment with Indoor
+- Minor layout refinement only
+
 ## v0.2.11
 - Fine-tuned Outdoor label spacing (+4px)
 - Finalized symmetric top-row alignment
