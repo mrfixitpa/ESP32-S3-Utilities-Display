@@ -368,8 +368,7 @@ display:
           tile(18, 148, 136, 84, 14);
           it.print(30, 160, id(font_stat_small), ink, "Monthly Power");
           if (id(electric_energy_month).state == id(electric_energy_month).state) {
-            it.printf(86, 194, id(font_big), ink, TextAlign::CENTER, "%.1f", id(electric_energy_month).state);
-            it.print(86, 216, id(font_label), ink, TextAlign::CENTER, "kWh");
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "%.1f kWh", id(electric_energy_month).state);
           } else {
             it.printf(86, 194, id(font_big), ink, TextAlign::CENTER, "--");
           }
@@ -377,7 +376,7 @@ display:
           tile(166, 148, 136, 84, 14);
           it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
           if (id(electric_cost_month).state == id(electric_cost_month).state) {
-            it.printf(234, 194, id(font_big), ink, TextAlign::CENTER, "$%.2f", id(electric_cost_month).state);
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(electric_cost_month).state);
           } else {
             it.printf(234, 194, id(font_big), ink, TextAlign::CENTER, "--");
           }
