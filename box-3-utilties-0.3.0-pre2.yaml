@@ -56,19 +56,15 @@ sensor:
     id: gas_now_flow
     lambda: |-
       return 0.0;
-    update_interval: 5s
+    update_interval: 60s
     internal: true
-    on_value:
-      - script.execute: request_draw
 
   - platform: template
     id: gas_month_ccf
     lambda: |-
       return 12.3;
-    update_interval: 10s
+    update_interval: 120s
     internal: true
-    on_value:
-      - script.execute: request_draw
 
   - platform: homeassistant
     id: water_day_gal
@@ -226,6 +222,8 @@ graph:
     duration: 1h
     width: 264
     height: 58
+    min_value: 0
+    max_value: 3000
     traces:
       - sensor: electric_power_w
         line_thickness: 2
