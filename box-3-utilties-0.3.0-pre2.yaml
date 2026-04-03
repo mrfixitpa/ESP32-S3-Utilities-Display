@@ -1,11 +1,12 @@
-# Version: 0.3.0-pre3
+# Version: 0.3.0-pre3-electric-merged
 #
-# Changes from 0.3.0-pre2:
-# - Climate page touch controls changed from on_click to on_press
-# - Enlarged climate-page touch zones for easier tapping
-# - Added logger messages to climate-page touch controls for debugging
-# - Added pressed visual feedback for climate temp and back buttons
-# - Adjusted climate room temp and temp button alignment
+# Changes from 0.3.0-pre3:
+# - Added Electric detail page
+# - Added 1-hour power graph
+# - Added monthly electric cost display
+# - Added home-page touch navigation to Electric page
+# - Added pressed visual feedback for Electric back button
+# - Kept prior climate-page touch/feedback updates
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -40,6 +41,13 @@ sensor:
   - platform: homeassistant
     id: electric_energy_month
     entity_id: sensor.house_electric_meter_energy_this_month
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: electric_cost_month
+    entity_id: sensor.smart_meter_electricity_cost_this_month
     internal: true
     on_value:
       - script.execute: request_draw
@@ -173,6 +181,13 @@ font:
     id: font_mode
     size: 16
 
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_graph_stat
+    size: 22
+
   - file: https://unpkg.com/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
     id: font_mdi
     size: 22
@@ -200,6 +215,20 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
+
+  - id: electric_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+graph:
+  - id: electric_power_graph
+    duration: 1h
+    width: 264
+    height: 58
+    traces:
+      - sensor: electric_power_w
+        line_thickness: 2
 
 display:
   - platform: ili9xxx
@@ -278,6 +307,62 @@ display:
           it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
           it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
 
+      - id: electric_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
+
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          if (id(electric_back_pressed)) {
+            fill_tile(10, 4, 96, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Electric");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Electric");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 284, 56, 14);
+          it.print(34, 55, id(font_label), ink, "Power Now");
+          it.printf(286, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.0f W", id(electric_power_w).state);
+
+          tile(18, 108, 284, 74, 14);
+          it.print(30, 118, id(font_label), ink, "Last 1 Hour");
+          it.graph(28, 140, id(electric_power_graph));
+
+          tile(18, 190, 136, 42, 14);
+          it.print(30, 202, id(font_label), ink, "Month");
+          it.printf(144, 201, id(font_graph_stat), ink, TextAlign::TOP_RIGHT, "%.1f kWh", id(electric_energy_month).state);
+
+          tile(166, 190, 136, 42, 14);
+          it.print(178, 202, id(font_label), ink, "Cost");
+          if (id(electric_cost_month).state == id(electric_cost_month).state) {
+            it.printf(292, 201, id(font_graph_stat), ink, TextAlign::TOP_RIGHT, "$%.2f", id(electric_cost_month).state);
+          } else {
+            it.printf(292, 201, id(font_graph_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
       - id: climate_page
         lambda: |-
           const Color paper = Color(255,255,255);
@@ -345,7 +430,6 @@ display:
             }
           }
 
-          // Header with pressed feedback on back button
           if (id(climate_back_pressed)) {
             fill_tile(10, 4, 84, 26, 10);
             it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
@@ -381,7 +465,6 @@ display:
           mode_button(166, "Heat", id(climate_mode).state == "heat");
           mode_button(240, "Auto", id(climate_mode).state == "heat_cool");
 
-          // Bottom temp controls with pressed feedback
           tile(18, 188, 284, 44, 14);
 
           if (id(climate_temp_down_pressed)) {
@@ -427,6 +510,37 @@ binary_sensor:
     on_click:
       then:
         - display.page.show: climate_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: home_page
+    id: electric_tile_open
+    x_min: 10
+    x_max: 310
+    y_min: 44
+    y_max: 100
+    on_press:
+      then:
+        - display.page.show: electric_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: electric_page
+    id: electric_back
+    x_min: 0
+    x_max: 100
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(electric_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - lambda: |-
+            id(electric_back_pressed) = false;
+        - display.page.show: home_page
         - script.execute: request_draw
 
   - platform: touchscreen
