@@ -1,14 +1,4 @@
-# Version: 0.3.2-pre1
-#
-# Changes from 0.2.13:
-# - Added touchscreen support for ESP32-S3-Box-3
-# - Split top row into left/right touch zones
-# - Left side of top row now opens a climate page
-# - Added dedicated climate page in the same black/white style
-# - Climate page uses Fahrenheit
-# - Added Off / Cool / Heat / Auto mode buttons
-# - Added temperature up/down controls
-# - Added back button from climate page to home page
+# Version: 0.3.0-pre1-touch-debug
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -16,6 +6,11 @@ substitutions:
 esphome:
   name: box-3-utilities
   friendly_name: Box 3 Utilities
+  on_boot:
+    priority: 600
+    then:
+      - display.page.show: home_page
+      - component.update: box_display
 
 esp32:
   board: esp32s3box
@@ -35,14 +30,46 @@ i2c:
     sda: GPIO08
     scl: GPIO18
     scan: true
-    sda_pullup_enabled: true
-    scl_pullup_enabled: true
-    frequency: 100kHz
 
 interval:
   - interval: 30s
     then:
       - script.execute: request_draw
+
+touchscreen:
+  - platform: gt911
+    id: gt911_touchscreen
+    display: box_display
+    i2c_id: bus_a
+    address: 0x5D
+    interrupt_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
+
+binary_sensor:
+  - platform: touchscreen
+    page_id: home_page
+    id: touch_test_fullscreen
+    x_min: 0
+    x_max: 320
+    y_min: 0
+    y_max: 240
+    on_click:
+      then:
+        - display.page.show: climate_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_back_fullscreen
+    x_min: 0
+    x_max: 320
+    y_min: 0
+    y_max: 240
+    on_click:
+      then:
+        - display.page.show: home_page
+        - script.execute: request_draw
 
 sensor:
   - platform: homeassistant
@@ -59,161 +86,6 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  - platform: homeassistant
-    id: electric_power_w
-    entity_id: sensor.house_electric_meter_power_minute_average
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: electric_energy_month
-    entity_id: sensor.house_electric_meter_energy_this_month
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: template
-    id: gas_now_flow
-    lambda: |-
-      return 0.0;
-    update_interval: 5s
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: template
-    id: gas_month_ccf
-    lambda: |-
-      return 12.3;
-    update_interval: 10s
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: water_day_gal
-    entity_id: sensor.daily_water_usage
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: water_week_gal
-    entity_id: sensor.weekly_water_usage
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: water_month_gal
-    entity_id: sensor.monthly_water_usage
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_current_temp
-    entity_id: sensor.ecobee_thermostat_current_temperature
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_current_humidity
-    entity_id: sensor.ecobee_thermostat_current_humidity
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_target_temp
-    entity_id: ${thermostat_entity}
-    attribute: temperature
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_target_low
-    entity_id: ${thermostat_entity}
-    attribute: target_temp_low
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_target_high
-    entity_id: ${thermostat_entity}
-    attribute: target_temp_high
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-text_sensor:
-  - platform: homeassistant
-    id: hvac_action
-    entity_id: ${thermostat_entity}
-    attribute: hvac_action
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_mode
-    entity_id: ${thermostat_entity}
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-font:
-  - file:
-      type: gfonts
-      family: Figtree
-      weight: 600
-    id: font_title
-    size: 18
-
-  - file:
-      type: gfonts
-      family: Figtree
-      weight: 500
-    id: font_label
-    size: 14
-
-  - file:
-      type: gfonts
-      family: Figtree
-      weight: 700
-    id: font_value
-    size: 20
-
-  - file:
-      type: gfonts
-      family: Figtree
-      weight: 700
-    id: font_big
-    size: 30
-
-  - file:
-      type: gfonts
-      family: Figtree
-      weight: 700
-    id: font_mode
-    size: 16
-
-  - file: https://unpkg.com/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
-    id: font_mdi
-    size: 22
-    glyphs:
-      - "󰈸"
-      - "󰜗"
-      - "\U000F140C"
-      - "\U000F0E0A"
-      - "\U000F0B28"
-      - "\U000F0B26"
-      - "\U000F0B2C"
-
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -228,369 +100,21 @@ display:
     pages:
       - id: home_page
         lambda: |-
-          const Color paper = Color(255,255,255);
-          const Color ink   = Color(0,0,0);
-
-          it.fill(paper);
-
-          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
-            it.filled_rectangle(x+r, y, w-2*r, h, c);
-            it.filled_rectangle(x, y+r, r, h-2*r, c);
-            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
-            it.filled_circle(x+r, y+r, r, c);
-            it.filled_circle(x+w-r-1, y+r, r, c);
-            it.filled_circle(x+r, y+h-r-1, r, c);
-            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
-          };
-
-          auto tile = [&](int x, int y, int w, int h, int r) {
-            fill_round(x, y, w, h, r, ink);
-            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
-          };
-
-          // ----------------
-          // Top strip
-          // ----------------
-          const int LEFT_X = 10;
-          const int RIGHT_X = 310;
-          const int OUT_GAP = 54;
-
-          it.print(LEFT_X, 8, id(font_label), ink, "Indoor");
-          it.printf(LEFT_X + 52, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
-
-          it.print(RIGHT_X - OUT_GAP, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
-          it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
-
-          const std::string act = id(hvac_action).state;
-          if (act == "heating") {
-            it.print(152, 6, id(font_mdi), ink, "󰈸");
-          } else if (act == "cooling") {
-            it.print(152, 6, id(font_mdi), ink, "󰜗");
-          }
-
-          it.line(10, 34, 310, 34, ink);
-
-          // ----------------
-          // Utility cards
-          // ----------------
-          int y = 44;
-          const int h = 56;
-
-          // Electricity
-          tile(10, y, 300, h, 14);
-          it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
-          it.print(44, y+10, id(font_title), ink, "Electricity");
-          it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
-          it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
-
-          // Gas
-          y += h + 10;
-          tile(10, y, 300, h, 14);
-          it.print(22, y+14, id(font_mdi), ink, "󰈸");
-          it.print(44, y+10, id(font_title), ink, "Gas");
-          it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
-          it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
-
-          // Water
-          y += h + 10;
-          tile(10, y, 300, h, 14);
-          it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
-          it.print(44, y+10, id(font_title), ink, "Water");
-
-          it.printf(170, y+12, id(font_label), ink, "Weekly:. %.0f gal", id(water_week_gal).state);
-          it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
-          it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
+          it.fill(Color(255,255,255));
+          it.print(20, 20, id(font_title), Color(0,0,0), "HOME");
 
       - id: climate_page
         lambda: |-
-          const Color paper = Color(255,255,255);
-          const Color ink   = Color(0,0,0);
+          it.fill(Color(255,255,255));
+          it.print(20, 20, id(font_title), Color(0,0,0), "CLIMATE");
 
-          it.fill(paper);
-
-          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
-            it.filled_rectangle(x+r, y, w-2*r, h, c);
-            it.filled_rectangle(x, y+r, r, h-2*r, c);
-            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
-            it.filled_circle(x+r, y+r, r, c);
-            it.filled_circle(x+w-r-1, y+r, r, c);
-            it.filled_circle(x+r, y+h-r-1, r, c);
-            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
-          };
-
-          auto tile = [&](int x, int y, int w, int h, int r) {
-            fill_round(x, y, w, h, r, ink);
-            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
-          };
-
-          auto mode_button = [&](int x, const char *label, bool active) {
-            tile(x, 140, 68, 40, 10);
-            if (active) {
-              it.filled_rectangle(x + 1, 141, 66, 4, ink);
-            }
-            it.printf(x + 34, 160, id(font_mode), ink, TextAlign::CENTER, "%s", label);
-          };
-
-          float current_temp = id(climate_current_temp).state;
-          if (!(current_temp == current_temp)) {
-            current_temp = id(avg_indoor_temp).state;
-          }
-
-          float current_humidity = id(climate_current_humidity).state;
-          std::string mode_text = id(climate_mode).state;
-          std::string action_text = id(hvac_action).state;
-
-          if (mode_text == "heat_cool") mode_text = "Auto";
-          else if (mode_text == "heat") mode_text = "Heat";
-          else if (mode_text == "cool") mode_text = "Cool";
-          else if (mode_text == "off") mode_text = "Off";
-
-          if (action_text == "heating") action_text = "Heating";
-          else if (action_text == "cooling") action_text = "Cooling";
-          else if (action_text == "idle") action_text = "Idle";
-          else if (action_text.empty()) action_text = "--";
-
-          std::string target_text = "--";
-          if (id(climate_mode).state == "heat_cool") {
-            if ((id(climate_target_low).state == id(climate_target_low).state) &&
-                (id(climate_target_high).state == id(climate_target_high).state)) {
-              target_text = str_sprintf("%.0f° / %.0f°",
-                id(climate_target_low).state,
-                id(climate_target_high).state);
-            }
-          } else {
-            if (id(climate_target_temp).state == id(climate_target_temp).state) {
-              target_text = str_sprintf("%.0f°", id(climate_target_temp).state);
-            }
-          }
-
-          // Header
-          it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
-          it.print(42, 8, id(font_title), ink, "Climate");
-          it.line(10, 34, 310, 34, ink);
-
-          // Main temp card
-          tile(18, 44, 124, 90, 14);
-          it.print(32, 54, id(font_label), ink, "Room");
-          it.printf(32, 88, id(font_big), ink, "%.0f°", current_temp);
-
-          // Info rows
-          tile(154, 44, 148, 26, 10);
-          it.print(166, 51, id(font_label), ink, "Target");
-          it.printf(290, 51, id(font_label), ink, TextAlign::TOP_RIGHT, "%s", target_text.c_str());
-
-          tile(154, 76, 148, 26, 10);
-          it.print(166, 83, id(font_label), ink, "Mode");
-          it.printf(290, 83, id(font_label), ink, TextAlign::TOP_RIGHT, "%s", mode_text.c_str());
-
-          tile(154, 108, 148, 26, 10);
-          it.print(166, 115, id(font_label), ink, "Humidity");
-          if (current_humidity == current_humidity) {
-            it.printf(290, 115, id(font_label), ink, TextAlign::TOP_RIGHT, "%.0f%%", current_humidity);
-          } else {
-            it.printf(290, 115, id(font_label), ink, TextAlign::TOP_RIGHT, "--");
-          }
-
-          // Mode buttons
-          mode_button(18,  "Off",  id(climate_mode).state == "off");
-          mode_button(92,  "Cool", id(climate_mode).state == "cool");
-          mode_button(166, "Heat", id(climate_mode).state == "heat");
-          mode_button(240, "Auto", id(climate_mode).state == "heat_cool");
-
-          // Temp controls
-          tile(18, 188, 284, 44, 14);
-          tile(18, 188, 64, 44, 12);
-          it.print(50, 200, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B26");
-
-          std::string center_text = target_text;
-          if (center_text == "--") {
-            center_text = action_text;
-          }
-          it.printf(160, 202, id(font_title), ink, TextAlign::CENTER, "%s", center_text.c_str());
-
-          tile(238, 188, 64, 44, 12);
-          it.print(270, 200, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B2C");
-
-touchscreen:
-  - platform: gt911
-    id: gt911_touchscreen
-    display: box_display
-    i2c_id: bus_a
-    address: 0x5D
-    interrupt_pin:
-      number: GPIO3
-      ignore_strapping_warning: true
-
-binary_sensor:
-  - platform: touchscreen
-    page_id: home_page
-    id: top_row_left_climate
-    x_min: 0
-    x_max: 160
-    y_min: 0
-    y_max: 34
-    on_click:
-      then:
-        - display.page.show: climate_page
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_back
-    x_min: 0
-    x_max: 70
-    y_min: 0
-    y_max: 34
-    on_click:
-      then:
-        - display.page.show: home_page
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_mode_off
-    x_min: 18
-    x_max: 86
-    y_min: 140
-    y_max: 180
-    on_click:
-      then:
-        - homeassistant.service:
-            service: climate.set_hvac_mode
-            data:
-              entity_id: ${thermostat_entity}
-              hvac_mode: "off"
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_mode_cool
-    x_min: 92
-    x_max: 160
-    y_min: 140
-    y_max: 180
-    on_click:
-      then:
-        - homeassistant.service:
-            service: climate.set_hvac_mode
-            data:
-              entity_id: ${thermostat_entity}
-              hvac_mode: "cool"
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_mode_heat
-    x_min: 166
-    x_max: 234
-    y_min: 140
-    y_max: 180
-    on_click:
-      then:
-        - homeassistant.service:
-            service: climate.set_hvac_mode
-            data:
-              entity_id: ${thermostat_entity}
-              hvac_mode: "heat"
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_mode_auto
-    x_min: 240
-    x_max: 308
-    y_min: 140
-    y_max: 180
-    on_click:
-      then:
-        - homeassistant.service:
-            service: climate.set_hvac_mode
-            data:
-              entity_id: ${thermostat_entity}
-              hvac_mode: "heat_cool"
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_temp_down
-    x_min: 18
-    x_max: 82
-    y_min: 188
-    y_max: 232
-    on_click:
-      then:
-        - if:
-            condition:
-              lambda: return id(climate_mode).state == "heat_cool";
-            then:
-              - homeassistant.service:
-                  service: climate.set_temperature
-                  data:
-                    entity_id: ${thermostat_entity}
-                    target_temp_low: !lambda |-
-                      float next = id(climate_target_low).state - 1;
-                      if (!(next == next)) next = 65;
-                      return next;
-                    target_temp_high: !lambda |-
-                      float high = id(climate_target_high).state;
-                      if (!(high == high)) high = 75;
-                      return high;
-            else:
-              - if:
-                  condition:
-                    lambda: return id(climate_mode).state == "heat" || id(climate_mode).state == "cool";
-                  then:
-                    - homeassistant.service:
-                        service: climate.set_temperature
-                        data:
-                          entity_id: ${thermostat_entity}
-                          temperature: !lambda |-
-                            float next = id(climate_target_temp).state - 1;
-                            if (!(next == next)) next = id(climate_current_temp).state;
-                            if (!(next == next)) next = 70;
-                            return next;
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_temp_up
-    x_min: 238
-    x_max: 302
-    y_min: 188
-    y_max: 232
-    on_click:
-      then:
-        - if:
-            condition:
-              lambda: return id(climate_mode).state == "heat_cool";
-            then:
-              - homeassistant.service:
-                  service: climate.set_temperature
-                  data:
-                    entity_id: ${thermostat_entity}
-                    target_temp_low: !lambda |-
-                      float low = id(climate_target_low).state;
-                      if (!(low == low)) low = 65;
-                      return low;
-                    target_temp_high: !lambda |-
-                      float next = id(climate_target_high).state + 1;
-                      if (!(next == next)) next = 75;
-                      return next;
-            else:
-              - if:
-                  condition:
-                    lambda: return id(climate_mode).state == "heat" || id(climate_mode).state == "cool";
-                  then:
-                    - homeassistant.service:
-                        service: climate.set_temperature
-                        data:
-                          entity_id: ${thermostat_entity}
-                          temperature: !lambda |-
-                            float next = id(climate_target_temp).state + 1;
-                            if (!(next == next)) next = id(climate_current_temp).state;
-                            if (!(next == next)) next = 70;
-                            return next;
-        - script.execute: request_draw
+font:
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 600
+    id: font_title
+    size: 18
 
 script:
   - id: request_draw
