@@ -1,4 +1,4 @@
-# Version: 0.3.0-pre3-electric-merged-v3
+# Version: 0.3.0-pre3-electric-water-merged-v1
 #
 # Changes from 0.3.0-pre3:
 # - Added Electric detail page
@@ -91,6 +91,13 @@ sensor:
   - platform: homeassistant
     id: water_month_gal
     entity_id: sensor.monthly_water_usage
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: water_cost_month
+    entity_id: sensor.water_cost_monthly_with_base
     internal: true
     on_value:
       - script.execute: request_draw
@@ -228,6 +235,11 @@ globals:
     initial_value: 'false'
 
   - id: electric_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: water_back_pressed
     type: bool
     restore_value: no
     initial_value: 'false'
@@ -379,6 +391,78 @@ display:
             it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(electric_cost_month).state);
           } else {
             it.printf(234, 194, id(font_big), ink, TextAlign::CENTER, "--");
+          }
+
+
+      - id: water_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
+
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          if (id(water_back_pressed)) {
+            fill_tile(10, 4, 88, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Water");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Water");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 136, 84, 14);
+          it.print(30, 56, id(font_stat_small), ink, "Daily");
+          if (id(water_day_gal).state == id(water_day_gal).state) {
+            it.printf(86, 92, id(font_big), ink, TextAlign::CENTER, "%.0f", id(water_day_gal).state);
+            it.print(86, 114, id(font_label), ink, TextAlign::CENTER, "gal");
+          } else {
+            it.printf(86, 96, id(font_big), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(166, 44, 136, 84, 14);
+          it.print(178, 56, id(font_stat_small), ink, "Weekly");
+          if (id(water_week_gal).state == id(water_week_gal).state) {
+            it.printf(234, 92, id(font_big), ink, TextAlign::CENTER, "%.0f", id(water_week_gal).state);
+            it.print(234, 114, id(font_label), ink, TextAlign::CENTER, "gal");
+          } else {
+            it.printf(234, 96, id(font_big), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(18, 148, 136, 84, 14);
+          it.print(30, 160, id(font_stat_small), ink, "Monthly");
+          if (id(water_month_gal).state == id(water_month_gal).state) {
+            it.printf(86, 196, id(font_big), ink, TextAlign::CENTER, "%.0f", id(water_month_gal).state);
+            it.print(86, 218, id(font_label), ink, TextAlign::CENTER, "gal");
+          } else {
+            it.printf(86, 200, id(font_big), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(166, 148, 136, 84, 14);
+          it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
+          if (id(water_cost_month).state == id(water_cost_month).state) {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(water_cost_month).state);
+          } else {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "--");
           }
 
       - id: climate_page
@@ -558,6 +642,37 @@ binary_sensor:
       then:
         - lambda: |-
             id(electric_back_pressed) = false;
+        - display.page.show: home_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: home_page
+    id: water_tile_open
+    x_min: 10
+    x_max: 310
+    y_min: 176
+    y_max: 232
+    on_press:
+      then:
+        - display.page.show: water_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: water_page
+    id: water_back
+    x_min: 0
+    x_max: 100
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(water_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - lambda: |-
+            id(water_back_pressed) = false;
         - display.page.show: home_page
         - script.execute: request_draw
 
