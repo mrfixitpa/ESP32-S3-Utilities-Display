@@ -1,16 +1,16 @@
-# Version: 0.3.0-pre1-touch-debug
-
 substitutions:
-  thermostat_entity: climate.ecobee_thermostat
+  name: box3-utilities-display
+  friendly_name: Box-3 Utilities Display
 
 esphome:
-  name: box-3-utilities
-  friendly_name: Box 3 Utilities
+  name: ${name}
+  friendly_name: ${friendly_name}
+  min_version: 2025.5.0
   on_boot:
     priority: 600
     then:
       - display.page.show: home_page
-      - component.update: box_display
+      - script.execute: request_draw
 
 esp32:
   board: esp32s3box
@@ -21,6 +21,9 @@ psram:
   mode: octal
   speed: 80MHz
 
+logger:
+  level: DEBUG
+
 spi:
   clk_pin: GPIO7
   mosi_pin: GPIO6
@@ -30,61 +33,17 @@ i2c:
     sda: GPIO08
     scl: GPIO18
     scan: true
+    sda_pullup_enabled: true
+    scl_pullup_enabled: true
+    frequency: 100kHz
 
-interval:
-  - interval: 30s
-    then:
-      - script.execute: request_draw
-
-touchscreen:
-  - platform: gt911
-    id: gt911_touchscreen
-    display: box_display
-    i2c_id: bus_a
-    address: 0x5D
-    interrupt_pin:
-      number: GPIO3
-      ignore_strapping_warning: true
-
-binary_sensor:
-  - platform: touchscreen
-    page_id: home_page
-    id: touch_test_fullscreen
-    x_min: 0
-    x_max: 320
-    y_min: 0
-    y_max: 240
-    on_click:
-      then:
-        - display.page.show: climate_page
-        - script.execute: request_draw
-
-  - platform: touchscreen
-    page_id: climate_page
-    id: climate_back_fullscreen
-    x_min: 0
-    x_max: 320
-    y_min: 0
-    y_max: 240
-    on_click:
-      then:
-        - display.page.show: home_page
-        - script.execute: request_draw
-
-sensor:
-  - platform: homeassistant
-    id: avg_indoor_temp
-    entity_id: sensor.average_indoor_temperature
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: outdoor_temp
-    entity_id: sensor.outdoor_temperature
-    internal: true
-    on_value:
-      - script.execute: request_draw
+font:
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 600
+    id: font_title
+    size: 22
 
 display:
   - platform: ili9xxx
@@ -100,21 +59,62 @@ display:
     pages:
       - id: home_page
         lambda: |-
-          it.fill(Color(255,255,255));
-          it.print(20, 20, id(font_title), Color(0,0,0), "HOME");
+          it.fill(Color(255, 255, 255));
+          it.print(20, 20, id(font_title), Color(0, 0, 0), "HOME");
+          it.print(20, 60, id(font_title), Color(0, 0, 0), "Tap screen to go to CLIMATE");
+          it.print(20, 100, id(font_title), Color(0, 0, 0), "Watch logs for raw touch");
 
       - id: climate_page
         lambda: |-
-          it.fill(Color(255,255,255));
-          it.print(20, 20, id(font_title), Color(0,0,0), "CLIMATE");
+          it.fill(Color(255, 255, 255));
+          it.print(20, 20, id(font_title), Color(0, 0, 0), "CLIMATE");
+          it.print(20, 60, id(font_title), Color(0, 0, 0), "Tap screen to go back HOME");
 
-font:
-  - file:
-      type: gfonts
-      family: Figtree
-      weight: 600
-    id: font_title
-    size: 18
+touchscreen:
+  - platform: gt911
+    id: gt911_touchscreen
+    display: box_display
+    i2c_id: bus_a
+    address: 0x5D
+    update_interval: 50ms
+    on_touch:
+      - lambda: |-
+          ESP_LOGI("touch", "x=%d y=%d x_raw=%d y_raw=%d state=%d",
+            touch.x, touch.y, touch.x_raw, touch.y_raw, touch.state);
+
+binary_sensor:
+  - platform: gt911
+    name: Box3 Touch Home Button
+    index: 0
+    on_press:
+      then:
+        - logger.log: "GT911 red button pressed"
+
+  - platform: touchscreen
+    page_id: home_page
+    id: touch_test_fullscreen_home
+    x_min: 0
+    x_max: 320
+    y_min: 0
+    y_max: 240
+    on_click:
+      then:
+        - logger.log: "Home page fullscreen touch detected"
+        - display.page.show: climate_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: touch_test_fullscreen_climate
+    x_min: 0
+    x_max: 320
+    y_min: 0
+    y_max: 240
+    on_click:
+      then:
+        - logger.log: "Climate page fullscreen touch detected"
+        - display.page.show: home_page
+        - script.execute: request_draw
 
 script:
   - id: request_draw
