@@ -1,12 +1,13 @@
-# Version: 0.3.0-pre3-electric-merged
+# Version: 0.3.0-pre3-electric-merged-v3
 #
 # Changes from 0.3.0-pre3:
 # - Added Electric detail page
-# - Added 1-hour power graph
+# - Replaced graph with Power Today
 # - Added monthly electric cost display
 # - Added home-page touch navigation to Electric page
 # - Added pressed visual feedback for Electric back button
 # - Kept prior climate-page touch/feedback updates
+# - Suspended gas redraw spam by keeping gas placeholders static
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -39,16 +40,15 @@ sensor:
       - script.execute: request_draw
 
   - platform: homeassistant
-    id: electric_energy_month
-    entity_id: sensor.house_electric_meter_energy_this_month
+    id: electric_energy_today
+    entity_id: sensor.house_electric_meter_energy_today
     internal: true
     on_value:
       - script.execute: request_draw
 
-
   - platform: homeassistant
-    id: electric_energy_today
-    entity_id: sensor.house_electric_meter_energy_today
+    id: electric_energy_month
+    entity_id: sensor.house_electric_meter_energy_this_month
     internal: true
     on_value:
       - script.execute: request_draw
@@ -189,8 +189,15 @@ font:
       type: gfonts
       family: Figtree
       weight: 700
-    id: font_graph_stat
-    size: 22
+    id: font_stat
+    size: 18
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 600
+    id: font_stat_small
+    size: 13
 
   - file: https://unpkg.com/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
     id: font_mdi
@@ -224,7 +231,6 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
-
 
 display:
   - platform: ili9xxx
@@ -303,69 +309,69 @@ display:
           it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
           it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
 
-- id: electric_page
-  lambda: |-
-    const Color paper = Color(255,255,255);
-    const Color ink   = Color(0,0,0);
+      - id: electric_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
 
-    it.fill(paper);
+          it.fill(paper);
 
-    auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
-      it.filled_rectangle(x+r, y, w-2*r, h, c);
-      it.filled_rectangle(x, y+r, r, h-2*r, c);
-      it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
-      it.filled_circle(x+r, y+r, r, c);
-      it.filled_circle(x+w-r-1, y+r, r, c);
-      it.filled_circle(x+r, y+h-r-1, r, c);
-      it.filled_circle(x+w-r-1, y+h-r-1, r, c);
-    };
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
 
-    auto tile = [&](int x, int y, int w, int h, int r) {
-      fill_round(x, y, w, h, r, ink);
-      fill_round(x+1, y+1, w-2, h-2, r-1, paper);
-    };
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
 
-    auto fill_tile = [&](int x, int y, int w, int h, int r) {
-      fill_round(x, y, w, h, r, ink);
-    };
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
 
-    if (id(electric_back_pressed)) {
-      fill_tile(10, 4, 96, 26, 10);
-      it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
-      it.print(42, 8, id(font_title), paper, "Electric");
-    } else {
-      it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
-      it.print(42, 8, id(font_title), ink, "Electric");
-    }
-    it.line(10, 34, 310, 34, ink);
+          if (id(electric_back_pressed)) {
+            fill_tile(10, 4, 96, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Electric");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Electric");
+          }
+          it.line(10, 34, 310, 34, ink);
 
-    tile(18, 44, 136, 56, 14);
-    it.print(34, 55, id(font_label), ink, "Power Now");
-    it.printf(144, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.0f W", id(electric_power_w).state);
+          tile(18, 44, 284, 48, 14);
+          it.print(30, 58, id(font_label), ink, "Power Now");
+          it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.0f W", id(electric_power_w).state);
 
-    tile(166, 44, 136, 56, 14);
-    it.print(182, 55, id(font_label), ink, "Power Today");
-    if (id(electric_energy_today).state == id(electric_energy_today).state) {
-      it.printf(292, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.1f kWh", id(electric_energy_today).state);
-    } else {
-      it.printf(292, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "--");
-    }
+          tile(18, 100, 284, 40, 14);
+          it.print(30, 112, id(font_label), ink, "Power Today");
+          if (id(electric_energy_today).state == id(electric_energy_today).state) {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.1f kWh", id(electric_energy_today).state);
+          } else {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
 
-    tile(18, 112, 284, 54, 14);
-    it.print(34, 124, id(font_label), ink, "Live Power");
-    it.printf(286, 122, id(font_graph_stat), ink, TextAlign::TOP_RIGHT, "%.0f W", id(electric_power_w).state);
+          tile(18, 148, 136, 84, 14);
+          it.print(30, 160, id(font_stat_small), ink, "Monthly");
+          if (id(electric_energy_month).state == id(electric_energy_month).state) {
+            it.printf(144, 190, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.1f kWh", id(electric_energy_month).state);
+          } else {
+            it.printf(144, 190, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
 
-    tile(18, 178, 136, 54, 14);
-    it.print(30, 188, id(font_label), ink, "Monthly");
-    it.printf(144, 206, id(font_value), ink, TextAlign::TOP_RIGHT, "%.1f kWh", id(electric_energy_month).state);
-
-    tile(166, 178, 136, 54, 14);
-    it.print(178, 188, id(font_label), ink, "Monthly Cost");
-    if (id(electric_cost_month).state == id(electric_cost_month).state) {
-      it.printf(292, 206, id(font_value), ink, TextAlign::TOP_RIGHT, "$%.2f", id(electric_cost_month).state);
-    } else {
-      it.printf(292, 206, id(font_value), ink, TextAlign::TOP_RIGHT, "--");
-    }
+          tile(166, 148, 136, 84, 14);
+          it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
+          if (id(electric_cost_month).state == id(electric_cost_month).state) {
+            it.printf(292, 190, id(font_stat), ink, TextAlign::TOP_RIGHT, "$%.2f", id(electric_cost_month).state);
+          } else {
+            it.printf(292, 190, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
 
       - id: climate_page
         lambda: |-
