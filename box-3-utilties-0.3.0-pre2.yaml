@@ -4,6 +4,8 @@
 # - Climate page touch controls changed from on_click to on_press
 # - Enlarged climate-page touch zones for easier tapping
 # - Added logger messages to climate-page touch controls for debugging
+# - Added pressed visual feedback for climate temp and back buttons
+# - Adjusted climate room temp and temp button alignment
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -183,6 +185,22 @@ font:
       - "\U000F0B26"
       - "\U000F0B2C"
 
+globals:
+  - id: climate_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: climate_temp_down_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: climate_temp_up_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
 display:
   - platform: ili9xxx
     model: S3BOX
@@ -282,6 +300,10 @@ display:
             fill_round(x+1, y+1, w-2, h-2, r-1, paper);
           };
 
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
           auto mode_button = [&](int x, const char *label, bool active) {
             tile(x, 140, 68, 40, 10);
             if (active) {
@@ -323,13 +345,20 @@ display:
             }
           }
 
-          it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
-          it.print(42, 8, id(font_title), ink, "Climate");
+          // Header with pressed feedback on back button
+          if (id(climate_back_pressed)) {
+            fill_tile(10, 4, 84, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Climate");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Climate");
+          }
           it.line(10, 34, 310, 34, ink);
 
           tile(18, 44, 124, 90, 14);
-          it.print(32, 54, id(font_label), ink, "Room");
-          it.printf(32, 88, id(font_big), ink, "%.0f°", current_temp);
+          it.print(40, 52, id(font_label), ink, "Room");
+          it.printf(58, 82, id(font_big), ink, "%.0f°", current_temp);
 
           tile(154, 44, 148, 26, 10);
           it.print(166, 51, id(font_label), ink, "Target");
@@ -352,9 +381,16 @@ display:
           mode_button(166, "Heat", id(climate_mode).state == "heat");
           mode_button(240, "Auto", id(climate_mode).state == "heat_cool");
 
+          // Bottom temp controls with pressed feedback
           tile(18, 188, 284, 44, 14);
-          tile(18, 188, 64, 44, 12);
-          it.print(50, 200, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B26");
+
+          if (id(climate_temp_down_pressed)) {
+            fill_tile(18, 188, 64, 44, 12);
+            it.print(50, 206, id(font_mdi), paper, TextAlign::CENTER, "\U000F0B26");
+          } else {
+            tile(18, 188, 64, 44, 12);
+            it.print(50, 206, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B26");
+          }
 
           std::string center_text = target_text;
           if (center_text == "--") {
@@ -362,8 +398,13 @@ display:
           }
           it.printf(160, 202, id(font_title), ink, TextAlign::CENTER, "%s", center_text.c_str());
 
-          tile(238, 188, 64, 44, 12);
-          it.print(270, 200, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B2C");
+          if (id(climate_temp_up_pressed)) {
+            fill_tile(238, 188, 64, 44, 12);
+            it.print(270, 206, id(font_mdi), paper, TextAlign::CENTER, "\U000F0B2C");
+          } else {
+            tile(238, 188, 64, 44, 12);
+            it.print(270, 206, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B2C");
+          }
 
 touchscreen:
   - platform: gt911
@@ -397,7 +438,14 @@ binary_sensor:
     y_max: 40
     on_press:
       then:
+        - lambda: |-
+            id(climate_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
         - logger.log: "Climate back pressed"
+        - lambda: |-
+            id(climate_back_pressed) = false;
         - display.page.show: home_page
         - script.execute: request_draw
 
@@ -478,6 +526,9 @@ binary_sensor:
     y_max: 239
     on_press:
       then:
+        - lambda: |-
+            id(climate_temp_down_pressed) = true;
+        - script.execute: request_draw
         - logger.log: "Climate temp DOWN pressed"
         - if:
             condition:
@@ -509,7 +560,7 @@ binary_sensor:
                             if (!(next == next)) next = id(climate_current_temp).state;
                             if (!(next == next)) next = 70;
                             return next;
-        - script.execute: request_draw
+        - script.execute: clear_temp_down_feedback
 
   - platform: touchscreen
     page_id: climate_page
@@ -520,6 +571,9 @@ binary_sensor:
     y_max: 239
     on_press:
       then:
+        - lambda: |-
+            id(climate_temp_up_pressed) = true;
+        - script.execute: request_draw
         - logger.log: "Climate temp UP pressed"
         - if:
             condition:
@@ -551,10 +605,26 @@ binary_sensor:
                             if (!(next == next)) next = id(climate_current_temp).state;
                             if (!(next == next)) next = 70;
                             return next;
-        - script.execute: request_draw
+        - script.execute: clear_temp_up_feedback
 
 script:
   - id: request_draw
     mode: restart
     then:
       - component.update: box_display
+
+  - id: clear_temp_down_feedback
+    mode: restart
+    then:
+      - delay: 180ms
+      - lambda: |-
+          id(climate_temp_down_pressed) = false;
+      - script.execute: request_draw
+
+  - id: clear_temp_up_feedback
+    mode: restart
+    then:
+      - delay: 180ms
+      - lambda: |-
+          id(climate_temp_up_pressed) = false;
+      - script.execute: request_draw
