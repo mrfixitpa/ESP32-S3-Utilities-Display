@@ -14,8 +14,13 @@ esphome:
 
 esp32:
   board: esp32s3box
+  flash_size: 16MB
   framework:
-    type: arduino
+    type: esp-idf
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
 
 psram:
   mode: octal
@@ -59,16 +64,15 @@ display:
     pages:
       - id: home_page
         lambda: |-
-          it.fill(Color(255, 255, 255));
-          it.print(20, 20, id(font_title), Color(0, 0, 0), "HOME");
-          it.print(20, 60, id(font_title), Color(0, 0, 0), "Tap screen to go to CLIMATE");
-          it.print(20, 100, id(font_title), Color(0, 0, 0), "Watch logs for raw touch");
+          it.fill(Color(255,255,255));
+          it.print(20, 20, id(font_title), Color(0,0,0), "HOME (IDF)");
+          it.print(20, 60, id(font_title), Color(0,0,0), "Tap screen anywhere");
 
       - id: climate_page
         lambda: |-
-          it.fill(Color(255, 255, 255));
-          it.print(20, 20, id(font_title), Color(0, 0, 0), "CLIMATE");
-          it.print(20, 60, id(font_title), Color(0, 0, 0), "Tap screen to go back HOME");
+          it.fill(Color(255,255,255));
+          it.print(20, 20, id(font_title), Color(0,0,0), "CLIMATE (IDF)");
+          it.print(20, 60, id(font_title), Color(0,0,0), "Tap to go back");
 
 touchscreen:
   - platform: gt911
@@ -76,43 +80,34 @@ touchscreen:
     display: box_display
     i2c_id: bus_a
     address: 0x5D
-    update_interval: 50ms
-    on_touch:
-      - lambda: |-
-          ESP_LOGI("touch", "x=%d y=%d x_raw=%d y_raw=%d state=%d",
-            touch.x, touch.y, touch.x_raw, touch.y_raw, touch.state);
+    interrupt_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
 
 binary_sensor:
-  - platform: gt911
-    name: Box3 Touch Home Button
-    index: 0
-    on_press:
-      then:
-        - logger.log: "GT911 red button pressed"
-
   - platform: touchscreen
     page_id: home_page
-    id: touch_test_fullscreen_home
+    id: touch_test_home
     x_min: 0
     x_max: 320
     y_min: 0
     y_max: 240
     on_click:
       then:
-        - logger.log: "Home page fullscreen touch detected"
+        - logger.log: "Touch detected on HOME"
         - display.page.show: climate_page
         - script.execute: request_draw
 
   - platform: touchscreen
     page_id: climate_page
-    id: touch_test_fullscreen_climate
+    id: touch_test_climate
     x_min: 0
     x_max: 320
     y_min: 0
     y_max: 240
     on_click:
       then:
-        - logger.log: "Climate page fullscreen touch detected"
+        - logger.log: "Touch detected on CLIMATE"
         - display.page.show: home_page
         - script.execute: request_draw
 
