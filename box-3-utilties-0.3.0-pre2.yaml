@@ -1,4 +1,4 @@
-# Version: 0.3.0-pre3-electric-water-merged-v1
+# Version: 0.3.0-pre3-electric-water-merged-v2
 #
 # Changes from 0.3.0-pre3:
 # - Added Electric detail page
@@ -430,31 +430,28 @@ display:
           }
           it.line(10, 34, 310, 34, ink);
 
-          tile(18, 44, 136, 84, 14);
-          it.print(30, 56, id(font_stat_small), ink, "Daily");
+          tile(18, 44, 284, 48, 14);
+          it.print(30, 58, id(font_label), ink, "Daily Gallons");
           if (id(water_day_gal).state == id(water_day_gal).state) {
-            it.printf(86, 92, id(font_big), ink, TextAlign::CENTER, "%.0f", id(water_day_gal).state);
-            it.print(86, 114, id(font_label), ink, TextAlign::CENTER, "gal");
+            it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.0f gal", id(water_day_gal).state);
           } else {
-            it.printf(86, 96, id(font_big), ink, TextAlign::CENTER, "--");
+            it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "--");
           }
 
-          tile(166, 44, 136, 84, 14);
-          it.print(178, 56, id(font_stat_small), ink, "Weekly");
+          tile(18, 100, 284, 40, 14);
+          it.print(30, 112, id(font_label), ink, "Weekly Gallons");
           if (id(water_week_gal).state == id(water_week_gal).state) {
-            it.printf(234, 92, id(font_big), ink, TextAlign::CENTER, "%.0f", id(water_week_gal).state);
-            it.print(234, 114, id(font_label), ink, TextAlign::CENTER, "gal");
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.0f gal", id(water_week_gal).state);
           } else {
-            it.printf(234, 96, id(font_big), ink, TextAlign::CENTER, "--");
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
           }
 
           tile(18, 148, 136, 84, 14);
-          it.print(30, 160, id(font_stat_small), ink, "Monthly");
+          it.print(30, 160, id(font_stat_small), ink, "Monthly Total");
           if (id(water_month_gal).state == id(water_month_gal).state) {
-            it.printf(86, 196, id(font_big), ink, TextAlign::CENTER, "%.0f", id(water_month_gal).state);
-            it.print(86, 218, id(font_label), ink, TextAlign::CENTER, "gal");
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "%.0f gal", id(water_month_gal).state);
           } else {
-            it.printf(86, 200, id(font_big), ink, TextAlign::CENTER, "--");
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "--");
           }
 
           tile(166, 148, 136, 84, 14);
