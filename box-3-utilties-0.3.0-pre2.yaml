@@ -1,19 +1,9 @@
-# Version: 0.3.0-pre2
+# Version: 0.3.0-pre3
 #
-# Changes from 0.2.13:
-# - Added display pages for home and climate
-# - Added GT911 touchscreen support hooks for Box-3
-# - Top-left half of top row opens climate page
-# - Climate page added in the same black/white style
-# - Climate page uses Fahrenheit
-# - Added Off / Cool / Heat / Auto HVAC controls
-# - Added target temperature up/down controls
-# - Added back button from climate page to home page
-#
-# NOTE:
-# - This is a package file intended to replace your existing box-3-utilities.yaml
-# - Your main device config must be on ESP-IDF for touch to work
-# - Your main device config must also include the box_display, bus_a, and request_draw IDs used here
+# Changes from 0.3.0-pre2:
+# - Climate page touch controls changed from on_click to on_press
+# - Enlarged climate-page touch zones for easier tapping
+# - Added logger messages to climate-page touch controls for debugging
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
@@ -402,23 +392,25 @@ binary_sensor:
     page_id: climate_page
     id: climate_back
     x_min: 0
-    x_max: 70
+    x_max: 90
     y_min: 0
-    y_max: 34
-    on_click:
+    y_max: 40
+    on_press:
       then:
+        - logger.log: "Climate back pressed"
         - display.page.show: home_page
         - script.execute: request_draw
 
   - platform: touchscreen
     page_id: climate_page
     id: climate_mode_off
-    x_min: 18
-    x_max: 86
-    y_min: 140
-    y_max: 180
-    on_click:
+    x_min: 10
+    x_max: 95
+    y_min: 132
+    y_max: 186
+    on_press:
       then:
+        - logger.log: "Climate mode OFF pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
             data:
@@ -429,12 +421,13 @@ binary_sensor:
   - platform: touchscreen
     page_id: climate_page
     id: climate_mode_cool
-    x_min: 92
-    x_max: 160
-    y_min: 140
-    y_max: 180
-    on_click:
+    x_min: 84
+    x_max: 169
+    y_min: 132
+    y_max: 186
+    on_press:
       then:
+        - logger.log: "Climate mode COOL pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
             data:
@@ -445,12 +438,13 @@ binary_sensor:
   - platform: touchscreen
     page_id: climate_page
     id: climate_mode_heat
-    x_min: 166
-    x_max: 234
-    y_min: 140
-    y_max: 180
-    on_click:
+    x_min: 158
+    x_max: 243
+    y_min: 132
+    y_max: 186
+    on_press:
       then:
+        - logger.log: "Climate mode HEAT pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
             data:
@@ -461,12 +455,13 @@ binary_sensor:
   - platform: touchscreen
     page_id: climate_page
     id: climate_mode_auto
-    x_min: 240
-    x_max: 308
-    y_min: 140
-    y_max: 180
-    on_click:
+    x_min: 232
+    x_max: 319
+    y_min: 132
+    y_max: 186
+    on_press:
       then:
+        - logger.log: "Climate mode AUTO pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
             data:
@@ -477,12 +472,13 @@ binary_sensor:
   - platform: touchscreen
     page_id: climate_page
     id: climate_temp_down
-    x_min: 18
-    x_max: 82
-    y_min: 188
-    y_max: 232
-    on_click:
+    x_min: 8
+    x_max: 92
+    y_min: 182
+    y_max: 239
+    on_press:
       then:
+        - logger.log: "Climate temp DOWN pressed"
         - if:
             condition:
               lambda: return id(climate_mode).state == "heat_cool";
@@ -518,12 +514,13 @@ binary_sensor:
   - platform: touchscreen
     page_id: climate_page
     id: climate_temp_up
-    x_min: 238
-    x_max: 302
-    y_min: 188
-    y_max: 232
-    on_click:
+    x_min: 228
+    x_max: 319
+    y_min: 182
+    y_max: 239
+    on_press:
       then:
+        - logger.log: "Climate temp UP pressed"
         - if:
             condition:
               lambda: return id(climate_mode).state == "heat_cool";
