@@ -1,25 +1,54 @@
-# Version: 0.2.13
+# This file tracks the latest stable release
+# Current version: 0.3.0
+
+# ================================
+# ESP32-S3 Utilities Display
+# Version: 0.3.0 (Release)
 #
-# Changes from 0.2.12:
-# - Replaced live water flow (GPM) with daily usage
-# - Water card now shows:
-#   * Day (gal)
-#   * Week (gal)
-#   * Month (gal)
-# - Improved layout to prevent overflow and maintain card spacing
-# - No changes to electricity, gas, fonts, icons, or overall layout
+# Highlights:
+# - Full touch-enabled navigation (Home, Electric, Water, Weather)
+# - Electric screen (power, daily, monthly usage)
+# - Water screen (flow, daily, weekly, monthly usage)
+# - Weather screen (condition, temp, humidity, wind)
+#
+# Improvements:
+# - Unified layout, spacing, and typography
+# - Standardized labels with colons
+# - Clean black/white “e-ink” styling
+#
+# Fixes:
+# - Weather icon overlap
+# - Touch responsiveness improvements
+# - Alignment fixes across all tiles
+# ================================
+
+# Version: 0.3.0
+#
+# Changes from 0.3.0-pre3:
+# - Added Electric detail page
+# - Replaced graph with Power Today
+# - Added monthly electric cost display
+# - Added home-page touch navigation to Electric page
+# - Added pressed visual feedback for Electric back button
+# - Kept prior climate-page touch/feedback updates
+# - Suspended gas redraw spam by keeping gas placeholders static
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
-
-spi:
-  clk_pin: GPIO7
-  mosi_pin: GPIO6
 
 interval:
   - interval: 30s
     then:
       - script.execute: request_draw
+
+  - interval: 1s
+    then:
+      - lambda: |-
+          if (id(current_page_id) != 0 && (millis() - id(last_touch_ms)) > 12000) {
+            id(current_page_id) = 0;
+            id(box_display).show_page(id(home_page));
+            id(box_display).update();
+          }
 
 sensor:
   - platform: homeassistant
@@ -37,8 +66,22 @@ sensor:
       - script.execute: request_draw
 
   - platform: homeassistant
+    id: outdoor_humidity
+    entity_id: sensor.outdoor_humidity
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
     id: electric_power_w
     entity_id: sensor.house_electric_meter_power_minute_average
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: electric_energy_today
+    entity_id: sensor.house_electric_meter_energy_today
     internal: true
     on_value:
       - script.execute: request_draw
@@ -50,23 +93,26 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  - platform: template
-    id: gas_now_flow
-    lambda: |-
-      return 0.0;
-    update_interval: 5s
+  - platform: homeassistant
+    id: electric_cost_month
+    entity_id: sensor.smart_meter_electricity_cost_this_month
     internal: true
     on_value:
       - script.execute: request_draw
 
   - platform: template
+    id: gas_now_flow
+    lambda: |-
+      return 0.0;
+    update_interval: 60s
+    internal: true
+
+  - platform: template
     id: gas_month_ccf
     lambda: |-
       return 12.3;
-    update_interval: 10s
+    update_interval: 120s
     internal: true
-    on_value:
-      - script.execute: request_draw
 
   - platform: homeassistant
     id: water_day_gal
@@ -89,11 +135,77 @@ sensor:
     on_value:
       - script.execute: request_draw
 
+  - platform: homeassistant
+    id: water_cost_month
+    entity_id: sensor.water_cost_monthly_with_base
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_current_temp
+    entity_id: sensor.ecobee_thermostat_current_temperature
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_current_humidity
+    entity_id: sensor.ecobee_thermostat_current_humidity
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_target_temp
+    entity_id: ${thermostat_entity}
+    attribute: temperature
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_target_low
+    entity_id: ${thermostat_entity}
+    attribute: target_temp_low
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_target_high
+    entity_id: ${thermostat_entity}
+    attribute: target_temp_high
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
 text_sensor:
   - platform: homeassistant
     id: hvac_action
     entity_id: ${thermostat_entity}
     attribute: hvac_action
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_mode
+    entity_id: ${thermostat_entity}
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: outdoor_wind_conditions
+    entity_id: sensor.outdoor_wind_conditions
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: weather_condition
+    entity_id: weather.home
     internal: true
     on_value:
       - script.execute: request_draw
@@ -120,6 +232,34 @@ font:
     id: font_value
     size: 20
 
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_big
+    size: 30
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_mode
+    size: 16
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 700
+    id: font_stat
+    size: 18
+
+  - file:
+      type: gfonts
+      family: Figtree
+      weight: 600
+    id: font_stat_small
+    size: 13
+
   - file: https://unpkg.com/@mdi/font@7.4.47/fonts/materialdesignicons-webfont.ttf
     id: font_mdi
     size: 22
@@ -128,6 +268,75 @@ font:
       - "󰜗"
       - "\U000F140C"
       - "\U000F0E0A"
+      - "\U000F0B28"
+      - "\U000F0B26"
+      - "\U000F0B2C"
+      - "\U000F0590"
+      - "\U000F0594"
+      - "\U000F0591"
+      - "\U000F0595"
+      - "\U000F0598"
+      - "\U000F0597"
+      - "\U000F0F2F"
+      - "\U000F067E"
+      - "\U000F0599"
+      - "\U000F059D"
+
+globals:
+  - id: current_page_id
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: last_touch_ms
+    type: unsigned long
+    restore_value: no
+    initial_value: '0'
+
+  - id: electric_tile_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: water_tile_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: weather_tile_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: climate_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: climate_temp_down_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: climate_temp_up_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: electric_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: water_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: weather_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
 
 display:
   - platform: ili9xxx
@@ -140,85 +349,833 @@ display:
       inverted: true
     invert_colors: false
     update_interval: never
-    lambda: |-
-      const Color paper = Color(255,255,255);
-      const Color ink   = Color(0,0,0);
+    pages:
+      - id: home_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
 
-      it.fill(paper);
+          it.fill(paper);
 
-      auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
-        it.filled_rectangle(x+r, y, w-2*r, h, c);
-        it.filled_rectangle(x, y+r, r, h-2*r, c);
-        it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
-        it.filled_circle(x+r, y+r, r, c);
-        it.filled_circle(x+w-r-1, y+r, r, c);
-        it.filled_circle(x+r, y+h-r-1, r, c);
-        it.filled_circle(x+w-r-1, y+h-r-1, r, c);
-      };
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
 
-      auto tile = [&](int x, int y, int w, int h, int r) {
-        fill_round(x, y, w, h, r, ink);
-        fill_round(x+1, y+1, w-2, h-2, r-1, paper);
-      };
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
 
-      // ----------------
-      // Top strip
-      // ----------------
-      const int LEFT_X = 10;
-      const int RIGHT_X = 310;
-      const int OUT_GAP = 54;
+          const int LEFT_X = 10;
+          const int RIGHT_X = 310;
+          const int OUT_GAP = 54;
 
-      it.print(LEFT_X, 8, id(font_label), ink, "Indoor");
-      it.printf(LEFT_X + 52, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
+          it.print(LEFT_X, 8, id(font_label), ink, "Indoor");
+          it.printf(LEFT_X + 52, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
-      it.print(RIGHT_X - OUT_GAP, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
-      it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          if (id(weather_tile_pressed)) {
+            fill_round(206, 2, 104, 28, 10, ink);
+            it.print(RIGHT_X - OUT_GAP, 8, id(font_label), paper, TextAlign::TOP_RIGHT, "Outdoor");
+            it.printf(RIGHT_X, 6, id(font_value), paper, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          } else {
+            it.print(RIGHT_X - OUT_GAP, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
+            it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          }
 
-      const std::string act = id(hvac_action).state;
-      if (act == "heating") {
-        it.print(152, 6, id(font_mdi), ink, "󰈸");
-      } else if (act == "cooling") {
-        it.print(152, 6, id(font_mdi), ink, "󰜗");
-      }
+          const std::string act = id(hvac_action).state;
+          if (act == "heating") {
+            it.print(152, 6, id(font_mdi), ink, "󰈸");
+          } else if (act == "cooling") {
+            it.print(152, 6, id(font_mdi), ink, "󰜗");
+          }
 
-      it.line(10, 34, 310, 34, ink);
+          it.line(10, 34, 310, 34, ink);
 
-      // ----------------
-      // Utility cards
-      // ----------------
-      int y = 44;
-      const int h = 56;
+          int y = 44;
+          const int h = 56;
 
-      // Electricity
-      tile(10, y, 300, h, 14);
-      it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
-      it.print(44, y+10, id(font_title), ink, "Electricity");
-      it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
-      it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
+          if (id(electric_tile_pressed)) {
+            fill_round(10, y, 300, h, 14, ink);
+            it.print(22, y+14, id(font_mdi), paper, "\U000F140C");
+            it.print(44, y+10, id(font_title), paper, "Electricity");
+            it.printf(44, y+34, id(font_label), paper, "Now %.0f W", id(electric_power_w).state);
+            it.printf(170, y+34, id(font_label), paper, "Month %.1f kWh", id(electric_energy_month).state);
+          } else {
+            tile(10, y, 300, h, 14);
+            it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
+            it.print(44, y+10, id(font_title), ink, "Electricity");
+            it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
+            it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
+          }
 
-      // Gas
-      y += h + 10;
-      tile(10, y, 300, h, 14);
-      it.print(22, y+14, id(font_mdi), ink, "󰈸");
-      it.print(44, y+10, id(font_title), ink, "Gas");
-      it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
-      it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
+          y += h + 10;
+          tile(10, y, 300, h, 14);
+          it.print(22, y+14, id(font_mdi), ink, "󰈸");
+          it.print(44, y+10, id(font_title), ink, "Gas");
+          it.printf(44, y+34, id(font_label), ink, "Now %.2f", id(gas_now_flow).state);
+          it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
 
-      // Water
-      y += h + 10;
-      tile(10, y, 300, h, 14);
-      it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
-      it.print(44, y+10, id(font_title), ink, "Water");
+          y += h + 10;
+          if (id(water_tile_pressed)) {
+            fill_round(10, y, 300, h, 14, ink);
+            it.print(22, y+14, id(font_mdi), paper, "\U000F0E0A");
+            it.print(44, y+10, id(font_title), paper, "Water");
+            it.printf(170, y+12, id(font_label), paper, "Weekly:. %.0f gal", id(water_week_gal).state);
+            it.printf(44, y+36, id(font_label), paper, "Daily:. %.0f gal", id(water_day_gal).state);
+            it.printf(170, y+36, id(font_label), paper, "Monthly:. %.0f gal", id(water_month_gal).state);
+          } else {
+            tile(10, y, 300, h, 14);
+            it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
+            it.print(44, y+10, id(font_title), ink, "Water");
+            it.printf(170, y+12, id(font_label), ink, "Weekly:. %.0f gal", id(water_week_gal).state);
+            it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
+            it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
+          }
 
-      // Top-right
-      it.printf(170, y+12, id(font_label), ink, "Weekly:. %.0f gal", id(water_week_gal).state);
+      - id: electric_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
 
-      // Bottom row
-      it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
-      it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          if (id(electric_back_pressed)) {
+            fill_tile(10, 4, 96, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Electric");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Electric");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 284, 48, 14);
+          it.print(30, 58, id(font_label), ink, "Power Now");
+          if (id(electric_power_w).state == id(electric_power_w).state) {
+            if (id(electric_power_w).state >= 1000.0f) {
+              it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.2f kW", id(electric_power_w).state / 1000.0f);
+            } else {
+              it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.0f W", id(electric_power_w).state);
+            }
+          } else {
+            it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          tile(18, 100, 284, 40, 14);
+          it.print(30, 112, id(font_label), ink, "Power Today");
+          if (id(electric_energy_today).state == id(electric_energy_today).state) {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.1f kWh", id(electric_energy_today).state);
+          } else {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          tile(18, 148, 136, 84, 14);
+          it.print(30, 160, id(font_stat_small), ink, "Monthly Power");
+          if (id(electric_energy_month).state == id(electric_energy_month).state) {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "%.1f kWh", id(electric_energy_month).state);
+          } else {
+            it.printf(86, 194, id(font_big), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(166, 148, 136, 84, 14);
+          it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
+          if (id(electric_cost_month).state == id(electric_cost_month).state) {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(electric_cost_month).state);
+          } else {
+            it.printf(234, 194, id(font_big), ink, TextAlign::CENTER, "--");
+          }
+
+
+      - id: water_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
+
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          if (id(water_back_pressed)) {
+            fill_tile(10, 4, 88, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Water");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Water");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 284, 48, 14);
+          it.print(30, 58, id(font_label), ink, "Daily Gallons");
+          if (id(water_day_gal).state == id(water_day_gal).state) {
+            it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "%.0f gal", id(water_day_gal).state);
+          } else {
+            it.printf(290, 54, id(font_big), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          tile(18, 100, 284, 40, 14);
+          it.print(30, 112, id(font_label), ink, "Weekly Gallons");
+          if (id(water_week_gal).state == id(water_week_gal).state) {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.0f gal", id(water_week_gal).state);
+          } else {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          tile(18, 148, 136, 84, 14);
+          it.print(30, 160, id(font_stat_small), ink, "Monthly Total");
+          if (id(water_month_gal).state == id(water_month_gal).state) {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "%.0f gal", id(water_month_gal).state);
+          } else {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(166, 148, 136, 84, 14);
+          it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
+          if (id(water_cost_month).state == id(water_cost_month).state) {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(water_cost_month).state);
+          } else {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "--");
+          }
+
+      - id: weather_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
+
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          std::string cond = id(weather_condition).state;
+          std::string cond_text = cond;
+          const char *icon = "\U000F0594";
+
+          if (cond == "clear-night") {
+            cond_text = "Clear Night";
+            icon = "\U000F0594";
+          } else if (cond == "cloudy") {
+            cond_text = "Cloudy";
+            icon = "\U000F0590";
+          } else if (cond == "fog") {
+            cond_text = "Fog";
+            icon = "\U000F0591";
+          } else if (cond == "hail" || cond == "lightning-rainy" || cond == "pouring" || cond == "rainy") {
+            cond_text = "Rain";
+            icon = "\U000F0597";
+          } else if (cond == "partlycloudy") {
+            cond_text = "Partly Cloudy";
+            icon = "\U000F0595";
+          } else if (cond == "snowy" || cond == "snowy-rainy") {
+            cond_text = "Snow";
+            icon = "\U000F0598";
+          } else if (cond == "sunny") {
+            cond_text = "Sunny";
+            icon = "\U000F0599";
+          } else if (cond == "windy" || cond == "windy-variant") {
+            cond_text = "Windy";
+            icon = "\U000F059D";
+          } else if (cond.empty()) {
+            cond_text = "--";
+            icon = "\U000F067E";
+          }
+
+          if (id(weather_back_pressed)) {
+            fill_tile(10, 4, 106, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Weather");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Weather");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 284, 48, 14);
+          it.print(30, 58, id(font_label), ink, "Condition:");
+          it.printf(248, 54, id(font_stat), ink, TextAlign::TOP_RIGHT, "%s", cond_text.c_str());
+          it.print(290, 53, id(font_mdi), ink, TextAlign::TOP_RIGHT, icon);
+
+          tile(18, 100, 284, 40, 14);
+          it.print(30, 112, id(font_label), ink, "Outdoor Temp:");
+          if (id(outdoor_temp).state == id(outdoor_temp).state) {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          } else {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          tile(18, 148, 136, 84, 14);
+          it.print(30, 160, id(font_stat_small), ink, "Humidity:");
+          if (id(outdoor_humidity).state == id(outdoor_humidity).state) {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "%.0f%%", id(outdoor_humidity).state);
+          } else {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(166, 148, 136, 84, 14);
+          it.print(178, 160, id(font_stat_small), ink, "Wind:");
+          if (!id(outdoor_wind_conditions).state.empty()) {
+            std::string s = id(outdoor_wind_conditions).state;
+            float speed = 0;
+            std::string dir = "";
+
+            // extract number
+            size_t pos = s.find(" ");
+            if (pos != std::string::npos) {
+              speed = atof(s.substr(0, pos).c_str());
+            }
+
+            // extract direction
+            if (s.find("north") != std::string::npos) dir = "N";
+            if (s.find("south") != std::string::npos) dir = "S";
+            if (s.find("east")  != std::string::npos) dir += "E";
+            if (s.find("west")  != std::string::npos) dir += "W";
+
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "%.0f mph %s", speed, dir.c_str());
+          } else {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "--");
+          }
+
+      - id: climate_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
+
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          auto mode_button = [&](int x, const char *label, bool active) {
+            tile(x, 140, 68, 40, 10);
+            if (active) {
+              it.filled_rectangle(x + 1, 141, 66, 4, ink);
+            }
+            it.printf(x + 34, 160, id(font_mode), ink, TextAlign::CENTER, "%s", label);
+          };
+
+          float current_temp = id(climate_current_temp).state;
+          if (!(current_temp == current_temp)) {
+            current_temp = id(avg_indoor_temp).state;
+          }
+
+          float current_humidity = id(climate_current_humidity).state;
+          std::string mode_text = id(climate_mode).state;
+          std::string action_text = id(hvac_action).state;
+
+          if (mode_text == "heat_cool") mode_text = "Auto";
+          else if (mode_text == "heat") mode_text = "Heat";
+          else if (mode_text == "cool") mode_text = "Cool";
+          else if (mode_text == "off") mode_text = "Off";
+
+          if (action_text == "heating") action_text = "Heating";
+          else if (action_text == "cooling") action_text = "Cooling";
+          else if (action_text == "idle") action_text = "Idle";
+          else if (action_text.empty()) action_text = "--";
+
+          std::string target_text = "--";
+          if (id(climate_mode).state == "heat_cool") {
+            if ((id(climate_target_low).state == id(climate_target_low).state) &&
+                (id(climate_target_high).state == id(climate_target_high).state)) {
+              target_text = str_sprintf("%.0f° / %.0f°",
+                id(climate_target_low).state,
+                id(climate_target_high).state);
+            }
+          } else {
+            if (id(climate_target_temp).state == id(climate_target_temp).state) {
+              target_text = str_sprintf("%.0f°", id(climate_target_temp).state);
+            }
+          }
+
+          if (id(climate_back_pressed)) {
+            fill_tile(10, 4, 84, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Climate");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Climate");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 124, 90, 14);
+          it.print(40, 52, id(font_label), ink, "Room");
+          it.printf(58, 82, id(font_big), ink, "%.0f°", current_temp);
+
+          tile(154, 44, 148, 26, 10);
+          it.print(166, 51, id(font_label), ink, "Target");
+          it.printf(290, 51, id(font_label), ink, TextAlign::TOP_RIGHT, "%s", target_text.c_str());
+
+          tile(154, 76, 148, 26, 10);
+          it.print(166, 83, id(font_label), ink, "Mode");
+          it.printf(290, 83, id(font_label), ink, TextAlign::TOP_RIGHT, "%s", mode_text.c_str());
+
+          tile(154, 108, 148, 26, 10);
+          it.print(166, 115, id(font_label), ink, "Humidity");
+          if (current_humidity == current_humidity) {
+            it.printf(290, 115, id(font_label), ink, TextAlign::TOP_RIGHT, "%.0f%%", current_humidity);
+          } else {
+            it.printf(290, 115, id(font_label), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          mode_button(18,  "Off",  id(climate_mode).state == "off");
+          mode_button(92,  "Cool", id(climate_mode).state == "cool");
+          mode_button(166, "Heat", id(climate_mode).state == "heat");
+          mode_button(240, "Auto", id(climate_mode).state == "heat_cool");
+
+          tile(18, 188, 284, 44, 14);
+
+          if (id(climate_temp_down_pressed)) {
+            fill_tile(18, 188, 64, 44, 12);
+            it.print(50, 206, id(font_mdi), paper, TextAlign::CENTER, "\U000F0B26");
+          } else {
+            tile(18, 188, 64, 44, 12);
+            it.print(50, 206, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B26");
+          }
+
+          std::string center_text = target_text;
+          if (center_text == "--") {
+            center_text = action_text;
+          }
+          it.printf(160, 202, id(font_title), ink, TextAlign::CENTER, "%s", center_text.c_str());
+
+          if (id(climate_temp_up_pressed)) {
+            fill_tile(238, 188, 64, 44, 12);
+            it.print(270, 206, id(font_mdi), paper, TextAlign::CENTER, "\U000F0B2C");
+          } else {
+            tile(238, 188, 64, 44, 12);
+            it.print(270, 206, id(font_mdi), ink, TextAlign::CENTER, "\U000F0B2C");
+          }
+
+touchscreen:
+  - platform: gt911
+    id: gt911_touchscreen
+    display: box_display
+    i2c_id: bus_a
+    address: 0x5D
+    interrupt_pin:
+      number: GPIO3
+      ignore_strapping_warning: true
+
+binary_sensor:
+  - platform: touchscreen
+    page_id: home_page
+    id: top_row_left_climate
+    x_min: 0
+    x_max: 160
+    y_min: 0
+    y_max: 34
+    on_click:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(current_page_id) = 4;
+        - display.page.show: climate_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: home_page
+    id: outdoor_weather_open
+    x_min: 206
+    x_max: 320
+    y_min: 0
+    y_max: 34
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(weather_tile_pressed) = true;
+        - script.execute: request_draw
+        - delay: 120ms
+        - lambda: |-
+            id(weather_tile_pressed) = false;
+            id(current_page_id) = 3;
+        - display.page.show: weather_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: home_page
+    id: electric_tile_open
+    x_min: 10
+    x_max: 310
+    y_min: 44
+    y_max: 100
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(electric_tile_pressed) = true;
+        - script.execute: request_draw
+        - delay: 120ms
+        - lambda: |-
+            id(electric_tile_pressed) = false;
+            id(current_page_id) = 1;
+        - display.page.show: electric_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: electric_page
+    id: electric_back
+    x_min: 0
+    x_max: 100
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(electric_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - lambda: |-
+            id(electric_back_pressed) = false;
+            id(current_page_id) = 0;
+        - display.page.show: home_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: home_page
+    id: water_tile_open
+    x_min: 10
+    x_max: 310
+    y_min: 176
+    y_max: 232
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(water_tile_pressed) = true;
+        - script.execute: request_draw
+        - delay: 120ms
+        - lambda: |-
+            id(water_tile_pressed) = false;
+            id(current_page_id) = 2;
+        - display.page.show: water_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: water_page
+    id: water_back
+    x_min: 0
+    x_max: 100
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(water_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - lambda: |-
+            id(water_back_pressed) = false;
+            id(current_page_id) = 0;
+        - display.page.show: home_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: weather_page
+    id: weather_back
+    x_min: 0
+    x_max: 110
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(weather_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - lambda: |-
+            id(weather_back_pressed) = false;
+            id(current_page_id) = 0;
+        - display.page.show: home_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_back
+    x_min: 0
+    x_max: 90
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(climate_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - logger.log: "Climate back pressed"
+        - lambda: |-
+            id(climate_back_pressed) = false;
+            id(current_page_id) = 0;
+        - display.page.show: home_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_mode_off
+    x_min: 10
+    x_max: 95
+    y_min: 132
+    y_max: 186
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+        - logger.log: "Climate mode OFF pressed"
+        - homeassistant.service:
+            service: climate.set_hvac_mode
+            data:
+              entity_id: ${thermostat_entity}
+              hvac_mode: "off"
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_mode_cool
+    x_min: 84
+    x_max: 169
+    y_min: 132
+    y_max: 186
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+        - logger.log: "Climate mode COOL pressed"
+        - homeassistant.service:
+            service: climate.set_hvac_mode
+            data:
+              entity_id: ${thermostat_entity}
+              hvac_mode: "cool"
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_mode_heat
+    x_min: 158
+    x_max: 243
+    y_min: 132
+    y_max: 186
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+        - logger.log: "Climate mode HEAT pressed"
+        - homeassistant.service:
+            service: climate.set_hvac_mode
+            data:
+              entity_id: ${thermostat_entity}
+              hvac_mode: "heat"
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_mode_auto
+    x_min: 232
+    x_max: 319
+    y_min: 132
+    y_max: 186
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+        - logger.log: "Climate mode AUTO pressed"
+        - homeassistant.service:
+            service: climate.set_hvac_mode
+            data:
+              entity_id: ${thermostat_entity}
+              hvac_mode: "heat_cool"
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_temp_down
+    x_min: 8
+    x_max: 92
+    y_min: 182
+    y_max: 239
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(climate_temp_down_pressed) = true;
+        - script.execute: request_draw
+        - logger.log: "Climate temp DOWN pressed"
+        - if:
+            condition:
+              lambda: return id(climate_mode).state == "heat_cool";
+            then:
+              - homeassistant.service:
+                  service: climate.set_temperature
+                  data:
+                    entity_id: ${thermostat_entity}
+                    target_temp_low: !lambda |-
+                      float next = id(climate_target_low).state - 1;
+                      if (!(next == next)) next = 65;
+                      return next;
+                    target_temp_high: !lambda |-
+                      float high = id(climate_target_high).state;
+                      if (!(high == high)) high = 75;
+                      return high;
+            else:
+              - if:
+                  condition:
+                    lambda: return id(climate_mode).state == "heat" || id(climate_mode).state == "cool";
+                  then:
+                    - homeassistant.service:
+                        service: climate.set_temperature
+                        data:
+                          entity_id: ${thermostat_entity}
+                          temperature: !lambda |-
+                            float next = id(climate_target_temp).state - 1;
+                            if (!(next == next)) next = id(climate_current_temp).state;
+                            if (!(next == next)) next = 70;
+                            return next;
+        - script.execute: clear_temp_down_feedback
+
+  - platform: touchscreen
+    page_id: climate_page
+    id: climate_temp_up
+    x_min: 228
+    x_max: 319
+    y_min: 182
+    y_max: 239
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(climate_temp_up_pressed) = true;
+        - script.execute: request_draw
+        - logger.log: "Climate temp UP pressed"
+        - if:
+            condition:
+              lambda: return id(climate_mode).state == "heat_cool";
+            then:
+              - homeassistant.service:
+                  service: climate.set_temperature
+                  data:
+                    entity_id: ${thermostat_entity}
+                    target_temp_low: !lambda |-
+                      float low = id(climate_target_low).state;
+                      if (!(low == low)) low = 65;
+                      return low;
+                    target_temp_high: !lambda |-
+                      float next = id(climate_target_high).state + 1;
+                      if (!(next == next)) next = 75;
+                      return next;
+            else:
+              - if:
+                  condition:
+                    lambda: return id(climate_mode).state == "heat" || id(climate_mode).state == "cool";
+                  then:
+                    - homeassistant.service:
+                        service: climate.set_temperature
+                        data:
+                          entity_id: ${thermostat_entity}
+                          temperature: !lambda |-
+                            float next = id(climate_target_temp).state + 1;
+                            if (!(next == next)) next = id(climate_current_temp).state;
+                            if (!(next == next)) next = 70;
+                            return next;
+        - script.execute: clear_temp_up_feedback
 
 script:
   - id: request_draw
     mode: restart
     then:
       - component.update: box_display
+
+  - id: clear_temp_down_feedback
+    mode: restart
+    then:
+      - delay: 180ms
+      - lambda: |-
+          id(climate_temp_down_pressed) = false;
+      - script.execute: request_draw
+
+  - id: clear_temp_up_feedback
+    mode: restart
+    then:
+      - delay: 180ms
+      - lambda: |-
+          id(climate_temp_up_pressed) = false;
+      - script.execute: request_draw
