@@ -1,34 +1,58 @@
-# Release Notes – v0.2.13
+# Release Notes – v0.3.0
 
 ## Summary
-This release refines the Water utility card by replacing live flow data with daily usage and correcting layout issues for a cleaner, more useful display.
+This release moves the project from pre-release to a stable **v0.3.0** and adds the full touch-driven multi-page experience for the utilities display.
 
 ---
 
-## What's Changed
+## What's New
 
-### 💧 Water Card Improvements
-- Replaced **live flow rate (GPM)** with **daily usage**
-- Added structured time-based layout:
-  - Day (gal)
-  - Week (gal)
-  - Month (gal)
+### Touch UI
+- Full touch-enabled navigation from the home screen
+- Dedicated detail pages for Electric, Water, and Weather
+- Auto-return to the home page after idle timeout
+- Visual pressed-state feedback on interactive controls
+
+### Electric Page
+- Added **Power Now**
+- Added **Power Today**
+- Added **Monthly Power**
+- Added **Monthly Cost**
+- Live power automatically switches between **W** and **kW** when appropriate
+
+### Water Page
+- Added **Daily Gallons**
+- Added **Weekly Gallons**
+- Added **Monthly Total**
+- Added **Monthly Cost**
+
+### Weather Page
+- Added **Condition** with icon
+- Added **Outdoor Temperature**
+- Added **Outdoor Humidity**
+- Added **Wind**
+- Wind display shortened to a cleaner format such as `13 mph W`
+
+### Climate Improvements
+- Improved touch behavior
+- Better touch zones
+- Added pressed visual feedback
+- Improved alignment within the climate layout
 
 ---
 
 ## Improvements
-- Fixed overflow issue that pushed content outside the card
-- Better alignment and spacing within existing layout
-- More meaningful at-a-glance information
+- Unified layout across Electric, Water, and Weather pages
+- Standardized labels and spacing
+- Improved responsiveness
+- Reduced unnecessary redraw activity from placeholder gas sensors
+- Preserved clean black-and-white appliance-style appearance
 
 ---
 
-## No Changes
-- Electricity card (unchanged)
-- Gas card (still placeholder)
-- Fonts, icons, and overall design
-- Performance and refresh behavior
-
+## Notes
+- Gas values are still placeholder / dummy data
+- This release is intended to be the new stable baseline for future updates
 ---
 
 ## Notes
