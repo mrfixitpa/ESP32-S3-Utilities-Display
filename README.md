@@ -14,15 +14,28 @@ A clean, high-contrast **utilities dashboard** for the **ESP32-S3-Box-3**, built
 <table>
   <tr>
     <td align="center">
-      <img src="assets/images/screen_shot_1.jpg" width="320"><br>
-      <em>Home screen</em>
+      <img src="assets/images/home-screen.jpg" width="320"><br>
+      <em>Home Screen</em>
     </td>
     <td align="center">
-      <img src="assets/images/screen_shot_2.jpg" width="320"><br>
-      <em>Detail screen example</em>
+      <img src="assets/images/climate_screen.jpg" width="320"><br>
+      <em>Climate Screen</em>
+    </td>
+        <td align="center">
+      <img src="assets/images/electric_screen.jpg" width="320"><br>
+      <em>Electric Screen</em>
+    </td>
+    <td align="center">
+      <img src="assets/images/water_screen.jpg" width="320"><br>
+      <em>Water Screen</em>
+    </td>
+        <td align="center">
+      <img src="assets/images/weather_screen.jpg" width="320"><br>
+      <em>Weather Screen</em>
     </td>
   </tr>
 </table>
+I apologise for the quality of the images. I do not have a better camera other than my cell phone. 
 
 ---
 
