@@ -1,4 +1,4 @@
-# Version: 0.3.0-pre3-electric-water-merged-v2
+# Version: 0.3.0-pre3-electric-water-weather-merged-v1
 #
 # Changes from 0.3.0-pre3:
 # - Added Electric detail page
@@ -17,6 +17,15 @@ interval:
     then:
       - script.execute: request_draw
 
+  - interval: 1s
+    then:
+      - lambda: |-
+          if (id(current_page_id) != 0 && (millis() - id(last_touch_ms)) > 12000) {
+            id(current_page_id) = 0;
+            id(box_display).show_page(id(home_page));
+            id(box_display).update();
+          }
+
 sensor:
   - platform: homeassistant
     id: avg_indoor_temp
@@ -28,6 +37,13 @@ sensor:
   - platform: homeassistant
     id: outdoor_temp
     entity_id: sensor.outdoor_temperature
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: outdoor_humidity
+    entity_id: sensor.outdoor_humidity
     internal: true
     on_value:
       - script.execute: request_draw
@@ -156,6 +172,20 @@ text_sensor:
     on_value:
       - script.execute: request_draw
 
+  - platform: homeassistant
+    id: outdoor_wind_conditions
+    entity_id: sensor.outdoor_wind_conditions
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: weather_condition
+    entity_id: weather.home
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
 font:
   - file:
       type: gfonts
@@ -217,8 +247,43 @@ font:
       - "\U000F0B28"
       - "\U000F0B26"
       - "\U000F0B2C"
+      - "\U000F0590"
+      - "\U000F0594"
+      - "\U000F0591"
+      - "\U000F0595"
+      - "\U000F0598"
+      - "\U000F0597"
+      - "\U000F0F2F"
+      - "\U000F067E"
+      - "\U000F0599"
+      - "\U000F059D"
 
 globals:
+  - id: current_page_id
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+  - id: last_touch_ms
+    type: unsigned long
+    restore_value: no
+    initial_value: '0'
+
+  - id: electric_tile_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: water_tile_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: weather_tile_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
   - id: climate_back_pressed
     type: bool
     restore_value: no
@@ -240,6 +305,11 @@ globals:
     initial_value: 'false'
 
   - id: water_back_pressed
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+
+  - id: weather_back_pressed
     type: bool
     restore_value: no
     initial_value: 'false'
@@ -285,8 +355,14 @@ display:
           it.print(LEFT_X, 8, id(font_label), ink, "Indoor");
           it.printf(LEFT_X + 52, 6, id(font_value), ink, "%.0f°", id(avg_indoor_temp).state);
 
-          it.print(RIGHT_X - OUT_GAP, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
-          it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          if (id(weather_tile_pressed)) {
+            fill_round(206, 2, 104, 28, 10, ink);
+            it.print(RIGHT_X - OUT_GAP, 8, id(font_label), paper, TextAlign::TOP_RIGHT, "Outdoor");
+            it.printf(RIGHT_X, 6, id(font_value), paper, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          } else {
+            it.print(RIGHT_X - OUT_GAP, 8, id(font_label), ink, TextAlign::TOP_RIGHT, "Outdoor");
+            it.printf(RIGHT_X, 6, id(font_value), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          }
 
           const std::string act = id(hvac_action).state;
           if (act == "heating") {
@@ -300,11 +376,19 @@ display:
           int y = 44;
           const int h = 56;
 
-          tile(10, y, 300, h, 14);
-          it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
-          it.print(44, y+10, id(font_title), ink, "Electricity");
-          it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
-          it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
+          if (id(electric_tile_pressed)) {
+            fill_round(10, y, 300, h, 14, ink);
+            it.print(22, y+14, id(font_mdi), paper, "\U000F140C");
+            it.print(44, y+10, id(font_title), paper, "Electricity");
+            it.printf(44, y+34, id(font_label), paper, "Now %.0f W", id(electric_power_w).state);
+            it.printf(170, y+34, id(font_label), paper, "Month %.1f kWh", id(electric_energy_month).state);
+          } else {
+            tile(10, y, 300, h, 14);
+            it.print(22, y+14, id(font_mdi), ink, "\U000F140C");
+            it.print(44, y+10, id(font_title), ink, "Electricity");
+            it.printf(44, y+34, id(font_label), ink, "Now %.0f W", id(electric_power_w).state);
+            it.printf(170, y+34, id(font_label), ink, "Month %.1f kWh", id(electric_energy_month).state);
+          }
 
           y += h + 10;
           tile(10, y, 300, h, 14);
@@ -314,12 +398,21 @@ display:
           it.printf(170, y+34, id(font_label), ink, "Month %.1f CCF", id(gas_month_ccf).state);
 
           y += h + 10;
-          tile(10, y, 300, h, 14);
-          it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
-          it.print(44, y+10, id(font_title), ink, "Water");
-          it.printf(170, y+12, id(font_label), ink, "Weekly:. %.0f gal", id(water_week_gal).state);
-          it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
-          it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
+          if (id(water_tile_pressed)) {
+            fill_round(10, y, 300, h, 14, ink);
+            it.print(22, y+14, id(font_mdi), paper, "\U000F0E0A");
+            it.print(44, y+10, id(font_title), paper, "Water");
+            it.printf(170, y+12, id(font_label), paper, "Weekly:. %.0f gal", id(water_week_gal).state);
+            it.printf(44, y+36, id(font_label), paper, "Daily:. %.0f gal", id(water_day_gal).state);
+            it.printf(170, y+36, id(font_label), paper, "Monthly:. %.0f gal", id(water_month_gal).state);
+          } else {
+            tile(10, y, 300, h, 14);
+            it.print(22, y+14, id(font_mdi), ink, "\U000F0E0A");
+            it.print(44, y+10, id(font_title), ink, "Water");
+            it.printf(170, y+12, id(font_label), ink, "Weekly:. %.0f gal", id(water_week_gal).state);
+            it.printf(44, y+36, id(font_label), ink, "Daily:. %.0f gal", id(water_day_gal).state);
+            it.printf(170, y+36, id(font_label), ink, "Monthly:. %.0f gal", id(water_month_gal).state);
+          }
 
       - id: electric_page
         lambda: |-
@@ -458,6 +551,120 @@ display:
           it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
           if (id(water_cost_month).state == id(water_cost_month).state) {
             it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(water_cost_month).state);
+          } else {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "--");
+          }
+
+      - id: weather_page
+        lambda: |-
+          const Color paper = Color(255,255,255);
+          const Color ink   = Color(0,0,0);
+
+          it.fill(paper);
+
+          auto fill_round = [&](int x, int y, int w, int h, int r, Color c) {
+            it.filled_rectangle(x+r, y, w-2*r, h, c);
+            it.filled_rectangle(x, y+r, r, h-2*r, c);
+            it.filled_rectangle(x+w-r, y+r, r, h-2*r, c);
+            it.filled_circle(x+r, y+r, r, c);
+            it.filled_circle(x+w-r-1, y+r, r, c);
+            it.filled_circle(x+r, y+h-r-1, r, c);
+            it.filled_circle(x+w-r-1, y+h-r-1, r, c);
+          };
+
+          auto tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+            fill_round(x+1, y+1, w-2, h-2, r-1, paper);
+          };
+
+          auto fill_tile = [&](int x, int y, int w, int h, int r) {
+            fill_round(x, y, w, h, r, ink);
+          };
+
+          std::string cond = id(weather_condition).state;
+          std::string cond_text = cond;
+          const char *icon = "\U000F0594";
+
+          if (cond == "clear-night") {
+            cond_text = "Clear Night";
+            icon = "\U000F0594";
+          } else if (cond == "cloudy") {
+            cond_text = "Cloudy";
+            icon = "\U000F0590";
+          } else if (cond == "fog") {
+            cond_text = "Fog";
+            icon = "\U000F0591";
+          } else if (cond == "hail" || cond == "lightning-rainy" || cond == "pouring" || cond == "rainy") {
+            cond_text = "Rain";
+            icon = "\U000F0597";
+          } else if (cond == "partlycloudy") {
+            cond_text = "Partly Cloudy";
+            icon = "\U000F0595";
+          } else if (cond == "snowy" || cond == "snowy-rainy") {
+            cond_text = "Snow";
+            icon = "\U000F0598";
+          } else if (cond == "sunny") {
+            cond_text = "Sunny";
+            icon = "\U000F0599";
+          } else if (cond == "windy" || cond == "windy-variant") {
+            cond_text = "Windy";
+            icon = "\U000F059D";
+          } else if (cond.empty()) {
+            cond_text = "--";
+            icon = "\U000F067E";
+          }
+
+          if (id(weather_back_pressed)) {
+            fill_tile(10, 4, 106, 26, 10);
+            it.print(16, 6, id(font_mdi), paper, "\U000F0B28");
+            it.print(42, 8, id(font_title), paper, "Weather");
+          } else {
+            it.print(16, 6, id(font_mdi), ink, "\U000F0B28");
+            it.print(42, 8, id(font_title), ink, "Weather");
+          }
+          it.line(10, 34, 310, 34, ink);
+
+          tile(18, 44, 284, 48, 14);
+          it.print(30, 58, id(font_label), ink, "Condition");
+          it.print(220, 53, id(font_mdi), ink, icon);
+          it.printf(290, 54, id(font_stat), ink, TextAlign::TOP_RIGHT, "%s", cond_text.c_str());
+
+          tile(18, 100, 284, 40, 14);
+          it.print(30, 112, id(font_label), ink, "Outdoor Temp");
+          if (id(outdoor_temp).state == id(outdoor_temp).state) {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "%.0f°", id(outdoor_temp).state);
+          } else {
+            it.printf(290, 110, id(font_stat), ink, TextAlign::TOP_RIGHT, "--");
+          }
+
+          tile(18, 148, 136, 84, 14);
+          it.print(30, 160, id(font_stat_small), ink, "Humidity");
+          if (id(outdoor_humidity).state == id(outdoor_humidity).state) {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "%.0f%%", id(outdoor_humidity).state);
+          } else {
+            it.printf(86, 198, id(font_stat), ink, TextAlign::CENTER, "--");
+          }
+
+          tile(166, 148, 136, 84, 14);
+          it.print(178, 160, id(font_stat_small), ink, "Wind");
+          if (!id(outdoor_wind_conditions).state.empty()) {
+            std::string s = id(outdoor_wind_conditions).state;
+            float speed = 0;
+            std::string dir = "";
+
+            // extract number
+            size_t pos = s.find(" ");
+            if (pos != std::string::npos) {
+              speed = atof(s.substr(0, pos).c_str());
+            }
+
+            // extract direction
+            if (s.find("north") != std::string::npos) dir = "N";
+            if (s.find("south") != std::string::npos) dir = "S";
+            if (s.find("east")  != std::string::npos) dir += "E";
+            if (s.find("west")  != std::string::npos) dir += "W";
+
+            it.printf(234, 198, id(font_label), ink, TextAlign::CENTER, "%.0f mph %s", speed, dir.c_str());
           } else {
             it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "--");
           }
@@ -608,7 +815,30 @@ binary_sensor:
     y_max: 34
     on_click:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(current_page_id) = 4;
         - display.page.show: climate_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: home_page
+    id: outdoor_weather_open
+    x_min: 206
+    x_max: 320
+    y_min: 0
+    y_max: 34
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(weather_tile_pressed) = true;
+        - script.execute: request_draw
+        - delay: 120ms
+        - lambda: |-
+            id(weather_tile_pressed) = false;
+            id(current_page_id) = 3;
+        - display.page.show: weather_page
         - script.execute: request_draw
 
   - platform: touchscreen
@@ -620,6 +850,14 @@ binary_sensor:
     y_max: 100
     on_press:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(electric_tile_pressed) = true;
+        - script.execute: request_draw
+        - delay: 120ms
+        - lambda: |-
+            id(electric_tile_pressed) = false;
+            id(current_page_id) = 1;
         - display.page.show: electric_page
         - script.execute: request_draw
 
@@ -633,12 +871,14 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            id(last_touch_ms) = millis();
             id(electric_back_pressed) = true;
         - script.execute: request_draw
     on_release:
       then:
         - lambda: |-
             id(electric_back_pressed) = false;
+            id(current_page_id) = 0;
         - display.page.show: home_page
         - script.execute: request_draw
 
@@ -651,6 +891,14 @@ binary_sensor:
     y_max: 232
     on_press:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(water_tile_pressed) = true;
+        - script.execute: request_draw
+        - delay: 120ms
+        - lambda: |-
+            id(water_tile_pressed) = false;
+            id(current_page_id) = 2;
         - display.page.show: water_page
         - script.execute: request_draw
 
@@ -664,12 +912,35 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            id(last_touch_ms) = millis();
             id(water_back_pressed) = true;
         - script.execute: request_draw
     on_release:
       then:
         - lambda: |-
             id(water_back_pressed) = false;
+            id(current_page_id) = 0;
+        - display.page.show: home_page
+        - script.execute: request_draw
+
+  - platform: touchscreen
+    page_id: weather_page
+    id: weather_back
+    x_min: 0
+    x_max: 110
+    y_min: 0
+    y_max: 40
+    on_press:
+      then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
+            id(weather_back_pressed) = true;
+        - script.execute: request_draw
+    on_release:
+      then:
+        - lambda: |-
+            id(weather_back_pressed) = false;
+            id(current_page_id) = 0;
         - display.page.show: home_page
         - script.execute: request_draw
 
@@ -683,6 +954,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            id(last_touch_ms) = millis();
             id(climate_back_pressed) = true;
         - script.execute: request_draw
     on_release:
@@ -690,6 +962,7 @@ binary_sensor:
         - logger.log: "Climate back pressed"
         - lambda: |-
             id(climate_back_pressed) = false;
+            id(current_page_id) = 0;
         - display.page.show: home_page
         - script.execute: request_draw
 
@@ -702,6 +975,8 @@ binary_sensor:
     y_max: 186
     on_press:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
         - logger.log: "Climate mode OFF pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
@@ -719,6 +994,8 @@ binary_sensor:
     y_max: 186
     on_press:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
         - logger.log: "Climate mode COOL pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
@@ -736,6 +1013,8 @@ binary_sensor:
     y_max: 186
     on_press:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
         - logger.log: "Climate mode HEAT pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
@@ -753,6 +1032,8 @@ binary_sensor:
     y_max: 186
     on_press:
       then:
+        - lambda: |-
+            id(last_touch_ms) = millis();
         - logger.log: "Climate mode AUTO pressed"
         - homeassistant.service:
             service: climate.set_hvac_mode
@@ -771,6 +1052,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            id(last_touch_ms) = millis();
             id(climate_temp_down_pressed) = true;
         - script.execute: request_draw
         - logger.log: "Climate temp DOWN pressed"
@@ -816,6 +1098,7 @@ binary_sensor:
     on_press:
       then:
         - lambda: |-
+            id(last_touch_ms) = millis();
             id(climate_temp_up_pressed) = true;
         - script.execute: request_draw
         - logger.log: "Climate temp UP pressed"
