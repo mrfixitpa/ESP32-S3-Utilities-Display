@@ -1,59 +1,62 @@
-# Release Notes – v0.3.0
+# Release Notes – v0.3.2
 
 ## Summary
-This release moves the project from pre-release to a stable **v0.3.0** and adds the full touch-driven multi-page experience for the utilities display.
+This release focuses on improving the reliability and resilience of the Utilities Display by addressing sensor conversion warnings, improving startup behavior, and reducing unnecessary processing during Home Assistant reconnects.
+
+The user experience, layout, and touch interface remain unchanged.
 
 ---
 
-## What's New
+## Fixed
 
-### Touch UI
-- Full touch-enabled navigation from the home screen
-- Dedicated detail pages for Electric, Water, and Weather
-- Auto-return to the home page after idle timeout
-- Visual pressed-state feedback on interactive controls
+### Home Assistant Sensor Reliability
+- Fixed warnings caused by `sensor.smart_meter_electricity_cost_this_month` temporarily becoming unavailable.
+- Fixed warnings caused by `sensor.water_cost_monthly_with_base` temporarily becoming unavailable.
+- Improved handling of missing sensor values to prevent invalid display updates.
 
-### Electric Page
-- Added **Power Now**
-- Added **Power Today**
-- Added **Monthly Power**
-- Added **Monthly Cost**
-- Live power automatically switches between **W** and **kW** when appropriate
+### Ecobee Climate Integration
+- Fixed intermittent warnings when Ecobee thermostat attributes temporarily returned `None` during startup or reconnection.
+- Improved fallback behavior when target temperature values are unavailable.
 
-### Water Page
-- Added **Daily Gallons**
-- Added **Weekly Gallons**
-- Added **Monthly Total**
-- Added **Monthly Cost**
-
-### Weather Page
-- Added **Condition** with icon
-- Added **Outdoor Temperature**
-- Added **Outdoor Humidity**
-- Added **Wind**
-- Wind display shortened to a cleaner format such as `13 mph W`
-
-### Climate Improvements
-- Improved touch behavior
-- Better touch zones
-- Added pressed visual feedback
-- Improved alignment within the climate layout
+### ESPHome Stability
+- Reduced the likelihood of display update issues caused by temporary Home Assistant disconnects.
+- Improved resilience during Home Assistant restarts and entity reloads.
 
 ---
 
 ## Improvements
-- Unified layout across Electric, Water, and Weather pages
-- Standardized labels and spacing
-- Improved responsiveness
-- Reduced unnecessary redraw activity from placeholder gas sensors
-- Preserved clean black-and-white appliance-style appearance
+
+- Enhanced overall stability of the Utilities Display package.
+- Improved handling of unexpected or unavailable entity states.
+- Reduced unnecessary redraw activity to help minimize ESPHome timing warnings.
+- Improved recovery behavior after reconnect events.
+
+---
+
+## User Interface
+
+### No Visual Changes
+- All layouts remain unchanged.
+- Home, Electric, Water, Weather, and Climate pages retain their existing appearance.
+- Touch zones and navigation behavior remain unchanged.
+- Existing functionality and workflows are preserved.
 
 ---
 
 ## Notes
-- Gas values are still placeholder / dummy data
-- This release is intended to be the new stable baseline for future updates
+
+- Gas values continue to use placeholder / demonstration data.
+- This release is recommended for all users running previous **v0.3.x** versions.
+- Existing local ESPHome configurations only require updating the GitHub package commit reference and reinstalling the firmware.
+
 ---
 
-## Notes
-This change improves usability by prioritizing consistent, always-relevant data instead of intermittent live flow readings.
+## Upgrade Instructions
+
+1. Update the GitHub package to **v0.3.2**.
+2. Update the package commit hash in your local Box-3 ESPHome configuration.
+3. Recompile and install the updated firmware on the ESP32-S3 Box.
+
+---
+
+This release builds upon the stable v0.3.x foundation by prioritizing reliability and graceful handling of temporary Home Assistant entity availability issues without altering the established user experience.
