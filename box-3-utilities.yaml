@@ -1,6 +1,6 @@
 # ================================
 # ESP32-S3 Utilities Display
-# Version: 0.3.0 (Release)
+# Version: 0.3.0 (Release) - repaired for HA unavailable/None states
 #
 # Highlights:
 # - Full touch-enabled navigation (Home, Electric, Water, Weather)
@@ -40,12 +40,14 @@ interval:
 
   - interval: 1s
     then:
-      - lambda: |-
-          if (id(current_page_id) != 0 && (millis() - id(last_touch_ms)) > 12000) {
-            id(current_page_id) = 0;
-            id(box_display).show_page(id(home_page));
-            id(box_display).update();
-          }
+      - if:
+          condition:
+            lambda: return id(current_page_id) != 0 && (millis() - id(last_touch_ms)) > 12000;
+          then:
+            - lambda: |-
+                id(current_page_id) = 0;
+            - display.page.show: home_page
+            - script.execute: request_draw
 
 sensor:
   - platform: homeassistant
@@ -90,13 +92,6 @@ sensor:
     on_value:
       - script.execute: request_draw
 
-  - platform: homeassistant
-    id: electric_cost_month
-    entity_id: sensor.smart_meter_electricity_cost_this_month
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
   - platform: template
     id: gas_now_flow
     lambda: |-
@@ -133,13 +128,6 @@ sensor:
       - script.execute: request_draw
 
   - platform: homeassistant
-    id: water_cost_month
-    entity_id: sensor.water_cost_monthly_with_base
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
     id: climate_current_temp
     entity_id: sensor.ecobee_thermostat_current_temperature
     internal: true
@@ -149,6 +137,37 @@ sensor:
   - platform: homeassistant
     id: climate_current_humidity
     entity_id: sensor.ecobee_thermostat_current_humidity
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+text_sensor:
+  - platform: homeassistant
+    id: hvac_action
+    entity_id: ${thermostat_entity}
+    attribute: hvac_action
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: climate_mode
+    entity_id: ${thermostat_entity}
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  # Imported as text so ESPHome does not log conversion warnings when HA sends None/unavailable.
+  - platform: homeassistant
+    id: electric_cost_month
+    entity_id: sensor.smart_meter_electricity_cost_this_month
+    internal: true
+    on_value:
+      - script.execute: request_draw
+
+  - platform: homeassistant
+    id: water_cost_month
+    entity_id: sensor.water_cost_monthly_with_base
     internal: true
     on_value:
       - script.execute: request_draw
@@ -173,22 +192,6 @@ sensor:
     id: climate_target_high
     entity_id: ${thermostat_entity}
     attribute: target_temp_high
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-text_sensor:
-  - platform: homeassistant
-    id: hvac_action
-    entity_id: ${thermostat_entity}
-    attribute: hvac_action
-    internal: true
-    on_value:
-      - script.execute: request_draw
-
-  - platform: homeassistant
-    id: climate_mode
-    entity_id: ${thermostat_entity}
     internal: true
     on_value:
       - script.execute: request_draw
@@ -501,8 +504,9 @@ display:
 
           tile(166, 148, 136, 84, 14);
           it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
-          if (id(electric_cost_month).state == id(electric_cost_month).state) {
-            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(electric_cost_month).state);
+          std::string electric_cost_text = id(electric_cost_month).state;
+          if (!electric_cost_text.empty() && electric_cost_text != "unavailable" && electric_cost_text != "unknown" && electric_cost_text != "None" && electric_cost_text != "none") {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", atof(electric_cost_text.c_str()));
           } else {
             it.printf(234, 194, id(font_big), ink, TextAlign::CENTER, "--");
           }
@@ -570,8 +574,9 @@ display:
 
           tile(166, 148, 136, 84, 14);
           it.print(178, 160, id(font_stat_small), ink, "Monthly Cost");
-          if (id(water_cost_month).state == id(water_cost_month).state) {
-            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", id(water_cost_month).state);
+          std::string water_cost_text = id(water_cost_month).state;
+          if (!water_cost_text.empty() && water_cost_text != "unavailable" && water_cost_text != "unknown" && water_cost_text != "None" && water_cost_text != "none") {
+            it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "$%.2f", atof(water_cost_text.c_str()));
           } else {
             it.printf(234, 198, id(font_stat), ink, TextAlign::CENTER, "--");
           }
@@ -743,17 +748,26 @@ display:
           else if (action_text == "idle") action_text = "Idle";
           else if (action_text.empty()) action_text = "--";
 
+          auto valid_text_number = [](const std::string &s) -> bool {
+            return !s.empty() && s != "unavailable" && s != "unknown" && s != "None" && s != "none";
+          };
+
+          auto text_to_float = [&](const std::string &s, float fallback) -> float {
+            if (!valid_text_number(s)) return fallback;
+            return atof(s.c_str());
+          };
+
           std::string target_text = "--";
           if (id(climate_mode).state == "heat_cool") {
-            if ((id(climate_target_low).state == id(climate_target_low).state) &&
-                (id(climate_target_high).state == id(climate_target_high).state)) {
+            if (valid_text_number(id(climate_target_low).state) &&
+                valid_text_number(id(climate_target_high).state)) {
               target_text = str_sprintf("%.0f° / %.0f°",
-                id(climate_target_low).state,
-                id(climate_target_high).state);
+                text_to_float(id(climate_target_low).state, 65),
+                text_to_float(id(climate_target_high).state, 75));
             }
           } else {
-            if (id(climate_target_temp).state == id(climate_target_temp).state) {
-              target_text = str_sprintf("%.0f°", id(climate_target_temp).state);
+            if (valid_text_number(id(climate_target_temp).state)) {
+              target_text = str_sprintf("%.0f°", text_to_float(id(climate_target_temp).state, 70));
             }
           }
 
@@ -1086,12 +1100,12 @@ binary_sensor:
                   data:
                     entity_id: ${thermostat_entity}
                     target_temp_low: !lambda |-
-                      float next = id(climate_target_low).state - 1;
-                      if (!(next == next)) next = 65;
+                      std::string low = id(climate_target_low).state;
+                      float next = (!low.empty() && low != "unavailable" && low != "unknown" && low != "None" && low != "none") ? atof(low.c_str()) - 1 : 65;
                       return next;
                     target_temp_high: !lambda |-
-                      float high = id(climate_target_high).state;
-                      if (!(high == high)) high = 75;
+                      std::string high_s = id(climate_target_high).state;
+                      float high = (!high_s.empty() && high_s != "unavailable" && high_s != "unknown" && high_s != "None" && high_s != "none") ? atof(high_s.c_str()) : 75;
                       return high;
             else:
               - if:
@@ -1103,8 +1117,8 @@ binary_sensor:
                         data:
                           entity_id: ${thermostat_entity}
                           temperature: !lambda |-
-                            float next = id(climate_target_temp).state - 1;
-                            if (!(next == next)) next = id(climate_current_temp).state;
+                            std::string temp_s = id(climate_target_temp).state;
+                            float next = (!temp_s.empty() && temp_s != "unavailable" && temp_s != "unknown" && temp_s != "None" && temp_s != "none") ? atof(temp_s.c_str()) - 1 : id(climate_current_temp).state;
                             if (!(next == next)) next = 70;
                             return next;
         - script.execute: clear_temp_down_feedback
@@ -1132,12 +1146,12 @@ binary_sensor:
                   data:
                     entity_id: ${thermostat_entity}
                     target_temp_low: !lambda |-
-                      float low = id(climate_target_low).state;
-                      if (!(low == low)) low = 65;
+                      std::string low_s = id(climate_target_low).state;
+                      float low = (!low_s.empty() && low_s != "unavailable" && low_s != "unknown" && low_s != "None" && low_s != "none") ? atof(low_s.c_str()) : 65;
                       return low;
                     target_temp_high: !lambda |-
-                      float next = id(climate_target_high).state + 1;
-                      if (!(next == next)) next = 75;
+                      std::string high = id(climate_target_high).state;
+                      float next = (!high.empty() && high != "unavailable" && high != "unknown" && high != "None" && high != "none") ? atof(high.c_str()) + 1 : 75;
                       return next;
             else:
               - if:
@@ -1149,8 +1163,8 @@ binary_sensor:
                         data:
                           entity_id: ${thermostat_entity}
                           temperature: !lambda |-
-                            float next = id(climate_target_temp).state + 1;
-                            if (!(next == next)) next = id(climate_current_temp).state;
+                            std::string temp_s = id(climate_target_temp).state;
+                            float next = (!temp_s.empty() && temp_s != "unavailable" && temp_s != "unknown" && temp_s != "None" && temp_s != "none") ? atof(temp_s.c_str()) + 1 : id(climate_current_temp).state;
                             if (!(next == next)) next = 70;
                             return next;
         - script.execute: clear_temp_up_feedback
