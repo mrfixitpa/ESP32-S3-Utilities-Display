@@ -1,6 +1,6 @@
 # ================================
 # ESP32-S3 Utilities Display
-# Version: 0.3.0 (Release) - repaired for HA unavailable/None states
+# Version: 0.3.2
 #
 # Highlights:
 # - Full touch-enabled navigation (Home, Electric, Water, Weather)
@@ -11,24 +11,25 @@
 # Improvements:
 # - Unified layout, spacing, and typography
 # - Standardized labels with colons
-# - Clean black/white “e-ink” styling
+# - Clean black/white "e-ink" styling
 #
 # Fixes:
 # - Weather icon overlap
 # - Touch responsiveness improvements
 # - Alignment fixes across all tiles
+# - Safe handling for unavailable Home Assistant cost sensors
+# - Safe handling for Ecobee target temperature attributes during startup
+# - Reduced display redraw pressure to help prevent ESPHome timing warnings
 # ================================
 
-# Version: 0.3.0
+# Version: 0.3.2
 #
-# Changes from 0.3.0-pre3:
-# - Added Electric detail page
-# - Replaced graph with Power Today
-# - Added monthly electric cost display
-# - Added home-page touch navigation to Electric page
-# - Added pressed visual feedback for Electric back button
-# - Kept prior climate-page touch/feedback updates
-# - Suspended gas redraw spam by keeping gas placeholders static
+# Changes from 0.3.1:
+# - Prevented warnings when monthly electric cost becomes unavailable
+# - Prevented warnings when monthly water cost becomes unavailable
+# - Prevented Ecobee attribute conversion warnings when attributes temporarily return None
+# - Improved resilience of display rendering during Home Assistant reconnects
+# - Minor optimizations to reduce interval/binary_sensor long-operation warnings
 
 substitutions:
   thermostat_entity: climate.ecobee_thermostat
